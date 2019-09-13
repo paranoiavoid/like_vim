@@ -1,6 +1,9 @@
+#include <algorithm>
 #include <curses.h>
-
 #define KEY_ESC 27 // Escにキーコードがないため定義する
+
+using std::max;
+using std::min;
 
 enum MODE { //現在のモードの状態
     NOR,    //ノーマルモード
@@ -24,10 +27,19 @@ int input_char(void) { //入力された(特殊)文字のキーコードを返�
 void normal_mode(int c) {
     if (c == 'i') {
         mode = INS;
-    } else if (c == 'I') {
+    } else if (c == 'a') {
         mode = INS;
         getyx(stdscr, cursor_y, cursor_x);
         move(cursor_y, ++cursor_x);
+    } else if (c == 'I') {
+        mode = INS;
+        getyx(stdscr, cursor_y, cursor_x);
+        cursor_x = 0;
+        move(cursor_y, cursor_x);
+    } else if (c == 'h') {
+        getyx(stdscr, cursor_y, cursor_x);
+        cursor_x = max(cursor_x - 1, 0);
+        move(cursor_y, cursor_x);
     } else if (c == ':') {
         mode = COM;
         move(window_size_y - 2, 0);
