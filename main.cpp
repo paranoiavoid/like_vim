@@ -44,7 +44,6 @@ WINDOW *text_screen;
 int main(void) {
     initscr(); //初期化する
 
-    scrollok(stdscr, true); //ウィンドウのスクロールを有効にする
     getmaxyx(stdscr, window_size_y,
              window_size_x); //ウィンドウのサイズを取得する
 
@@ -56,13 +55,13 @@ int main(void) {
         subwin(stdscr, window_size_y - status_window_height,
                window_size_x - line_window_width, 0, line_window_width);
 
-
     erase();
 
-    noecho();             //入力された文字を画面に表示しない
-    keypad(stdscr, true); //特殊なキーコードを使うようにする
+    scrollok(stdscr, true); //ウィンドウのスクロールを有効にする
+    noecho();               //入力された文字を画面に表示しない
+    keypad(stdscr, true);   //特殊なキーコードを使うようにする
 
-    wborder(line_screen,0,0,0,0,0,0,0,0);
+    wborder(line_screen, 0, 0, 0, 0, 0, 0, 0, 0);
     line_output();
 
     while (1) {
@@ -81,37 +80,39 @@ int input_char(void) { //入力された(特殊)文字のキーコードを返�
 void normal_mode(int c) {
     if (c == 'i') {
         mode = INS;
-        wmove(text_screen,cursor_y,cursor_x);
+        wmove(text_screen, cursor_y, cursor_x);
         wrefresh(text_screen);
     } else if (c == 'a') {
         mode = INS;
-        getyx(stdscr, cursor_y, cursor_x);
-        move(cursor_y, ++cursor_x);
+        wmove(text_screen, cursor_y, ++cursor_x);
+        wrefresh(text_screen);
     } else if (c == 'I') {
         mode = INS;
-        getyx(stdscr, cursor_y, cursor_x);
         cursor_x = 0;
-        move(cursor_y, cursor_x);
+        wmove(text_screen, cursor_y, cursor_x);
+        wrefresh(text_screen);
     } else if (c == 'h') {
-        getyx(stdscr, cursor_y, cursor_x);
         cursor_x = max(cursor_x - 1, 0);
-        move(cursor_y, cursor_x);
+        wmove(text_screen, cursor_y, cursor_x);
+        wrefresh(text_screen);
     } else if (c == ':') {
         mode = COM;
-        waddch(status_screen,(char)c);
+        waddch(status_screen, (char)c);
         wrefresh(status_screen);
     } else if (c == 'u') {
-        scrl(1);
+        // scrl(1);
+    } else if (c == 'd') {
+        // scrl(-1);
     }
 }
 void insert_mode(int c) {
     if (c == KEY_ESC) {
         mode = NOR;
         getyx(text_screen, cursor_y, cursor_x);
-        wmove(text_screen,cursor_y, --cursor_x);
+        wmove(text_screen, cursor_y, --cursor_x);
         wrefresh(text_screen);
     } else {
-        waddch(text_screen,(char)c);
+        waddch(text_screen, (char)c);
         wrefresh(text_screen);
     }
 }
@@ -125,16 +126,17 @@ void command_mode(int c) {
 
         werase(status_screen);
         wrefresh(status_screen);
-        wmove(text_screen,cursor_y, cursor_x);
+        wmove(text_screen, cursor_y, cursor_x);
         wrefresh(text_screen);
     } else if (c == KEY_ESC) {
         mode = NOR;
+
         werase(status_screen);
         wrefresh(status_screen);
-        wmove(text_screen,cursor_y, cursor_x);
+        wmove(text_screen, cursor_y, cursor_x);
         wrefresh(text_screen);
     } else {
-        waddch(status_screen,(char)c);
+        waddch(status_screen, (char)c);
         wrefresh(status_screen);
     }
 }
@@ -154,10 +156,10 @@ string command_scan(void) {
     int x, y;
     int size = 1000;
     char *tmp_str = (char *)malloc(sizeof(char) * size);
-    wmove(status_screen,0,1);
+    wmove(status_screen, 0, 1);
     wrefresh(status_screen);
     int p = 0;
-    p=winnstr(status_screen,tmp_str,size);
+    p = winnstr(status_screen, tmp_str, size);
 
     if (p == 0) {
         exit(1);
