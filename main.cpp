@@ -23,6 +23,10 @@ int window_size_y; //画面の縦幅
 int cursor_x = 0; //インサートモードにおけるカーソルのx座標
 int cursor_y = 0; //インサートモードにおけるカーソルのy座標
 MODE mode;        //現在のモード
+int line_window_width = 5; //行番号を表示するスクリーンの幅
+int status_window_height = 4; //ステータス,コマンドを表示するスクリーンの高さ
+int line_top = 1; //画面の一番上の行番号
+int line_max = 1; //行が存在する最大の行番号
 
 int input_char(void); //入力された(特殊)文字のキーコードを返す
 void normal_mode(int c);
@@ -31,6 +35,11 @@ void command_mode(int c);
 void input_check(int c);
 string command_scan(void); //コマンドモードのコマンド文字列を読み取り返す
 void command_check(string str); //コマンドモードのコマンドを実行する
+void line_output(void);
+
+WINDOW *line_screen;
+WINDOW *status_screen;
+WINDOW *text_screen;
 
 int main(void) {
     initscr(); //初期化する
@@ -39,10 +48,22 @@ int main(void) {
     getmaxyx(stdscr, window_size_y,
              window_size_x); //ウィンドウのサイズを取得する
 
+    line_screen = subwin(stdscr, window_size_y - status_window_height,
+                         line_window_width, 0, 0);
+    status_screen = subwin(stdscr, status_window_height, window_size_x,
+                           window_size_y - status_window_height, 0);
+    text_screen =
+        subwin(stdscr, window_size_y - status_window_height,
+               window_size_x - line_window_width, 0, line_window_width);
+
+
     erase();
 
     noecho();             //入力された文字を画面に表示しない
     keypad(stdscr, true); //特殊なキーコードを使うようにする
+
+    wborder(line_screen,0,0,0,0,0,0,0,0);
+    line_output();
 
     while (1) {
         input_check(input_char());
@@ -60,6 +81,8 @@ int input_char(void) { //入力された(特殊)文字のキーコードを返�
 void normal_mode(int c) {
     if (c == 'i') {
         mode = INS;
+        wmove(text_screen,cursor_y,cursor_x);
+        wrefresh(text_screen);
     } else if (c == 'a') {
         mode = INS;
         getyx(stdscr, cursor_y, cursor_x);
@@ -75,17 +98,21 @@ void normal_mode(int c) {
         move(cursor_y, cursor_x);
     } else if (c == ':') {
         mode = COM;
-        move(window_size_y - 2, 0);
-        addch((char)c);
+        waddch(status_screen,(char)c);
+        wrefresh(status_screen);
+    } else if (c == 'u') {
+        scrl(1);
     }
 }
 void insert_mode(int c) {
     if (c == KEY_ESC) {
         mode = NOR;
-        getyx(stdscr, cursor_y, cursor_x);
-        move(cursor_y, --cursor_x);
+        getyx(text_screen, cursor_y, cursor_x);
+        wmove(text_screen,cursor_y, --cursor_x);
+        wrefresh(text_screen);
     } else {
-        addch((char)c);
+        waddch(text_screen,(char)c);
+        wrefresh(text_screen);
     }
 }
 
@@ -96,14 +123,19 @@ void command_mode(int c) {
         string str = command_scan();
         command_check(str);
 
-        deleteln();
-        move(cursor_y, cursor_x);
+        werase(status_screen);
+        wrefresh(status_screen);
+        wmove(text_screen,cursor_y, cursor_x);
+        wrefresh(text_screen);
     } else if (c == KEY_ESC) {
         mode = NOR;
-        deleteln();
-        move(cursor_y, cursor_x);
+        werase(status_screen);
+        wrefresh(status_screen);
+        wmove(text_screen,cursor_y, cursor_x);
+        wrefresh(text_screen);
     } else {
-        addch((char)c);
+        waddch(status_screen,(char)c);
+        wrefresh(status_screen);
     }
 }
 void input_check(int c) {
@@ -122,10 +154,10 @@ string command_scan(void) {
     int x, y;
     int size = 1000;
     char *tmp_str = (char *)malloc(sizeof(char) * size);
-    getyx(stdscr, y, x);
-    move(y, 1);
+    wmove(status_screen,0,1);
+    wrefresh(status_screen);
     int p = 0;
-    p = innstr(tmp_str, size);
+    p=winnstr(status_screen,tmp_str,size);
 
     if (p == 0) {
         exit(1);
@@ -135,16 +167,7 @@ string command_scan(void) {
     str.erase(remove(str.begin(), str.end(), ' '),
               str.end()); // string型に写した文字列から空白を全て削除
 
-    /*
-    move(2, 0);
-    addstr(tmp_str);
-    move(3, 0);
-    addstr(str.c_str());
-    */
-
     free(tmp_str);
-
-    move(y, x);
 
     return str;
 }
@@ -159,5 +182,13 @@ void command_check(string str) {
     } else if (str == "q!") {
         endwin();
         exit(0);
+    }
+}
+
+void line_output(void) {
+    for (int i = 1; i <= 20; i++) {
+        char tmp[10];
+        snprintf(tmp, 10, "%d", i);
+        mvwaddstr(line_screen, i - 1, 0, tmp);
     }
 }
