@@ -64,6 +64,8 @@ int main(void) {
     wborder(line_screen, 0, 0, 0, 0, 0, 0, 0, 0);
     line_output();
 
+    move(0,line_window_width);
+
     while (1) {
         input_check(input_char());
     }
@@ -95,6 +97,16 @@ void normal_mode(int c) {
         cursor_x = max(cursor_x - 1, 0);
         wmove(text_screen, cursor_y, cursor_x);
         wrefresh(text_screen);
+    } else if (c == 'j') {
+        wmove(text_screen, ++cursor_y, cursor_x);
+        wrefresh(text_screen);
+    } else if (c == 'k') {
+        cursor_y = max(cursor_y - 1, 0);
+        wmove(text_screen, cursor_y, cursor_x);
+        wrefresh(text_screen);
+    } else if (c == 'l') {
+        wmove(text_screen, cursor_y, ++cursor_x);
+        wrefresh(text_screen);
     } else if (c == ':') {
         mode = COM;
         waddch(status_screen, (char)c);
@@ -122,6 +134,7 @@ void insert_mode(int c) {
         wrefresh(text_screen);
     } else {
         waddch(text_screen, (char)c);
+        // winsch(text_screen,(char)c);
         wrefresh(text_screen);
     }
 }
