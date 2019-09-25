@@ -103,6 +103,15 @@ void normal_mode(int c) {
         // scrl(1);
     } else if (c == 'd') {
         // scrl(-1);
+    } else if (c == 'x') {
+        wdelch(text_screen);
+        wrefresh(text_screen);
+    } else if (c == 'X') {
+        if (cursor_x > 0) {
+            wmove(text_screen, cursor_y, --cursor_x);
+            wdelch(text_screen);
+            wrefresh(text_screen);
+        }
     }
 }
 void insert_mode(int c) {
