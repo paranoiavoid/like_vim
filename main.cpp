@@ -121,8 +121,10 @@ void normal_mode(int c) {
         wmove(text_screen, cursor_y, cursor_x);
         wrefresh(text_screen);
     } else if (c == 'j') {
-        wmove(text_screen, ++cursor_y, cursor_x);
-        wrefresh(text_screen);
+        if (cursor_y < line_max - line_top) {
+            wmove(text_screen, ++cursor_y, cursor_x);
+            wrefresh(text_screen);
+        }
     } else if (c == 'k') {
         cursor_y = max(cursor_y - 1, 0);
         wmove(text_screen, cursor_y, cursor_x);
@@ -179,14 +181,14 @@ void normal_mode(int c) {
         wmove(text_screen, cursor_y, cursor_x);
         wrefresh(text_screen);
     } else if (c == 'q') {
-        if (line_max > 1&&line_max>line_top) {
+        if (line_max > 1 && line_max > line_top) {
             wdeleteln(text_screen);
             line_max--;
-            wmove(text_screen,min(cursor_y,line_max-line_top),0);
+            wmove(text_screen, min(cursor_y, line_max - line_top), 0);
             wrefresh(text_screen);
-        }else if(line_max==1){
+        } else if (line_max == 1) {
             wdeleteln(text_screen);
-            wmove(text_screen,min(cursor_y,line_max-line_top),0);
+            wmove(text_screen, min(cursor_y, line_max - line_top), 0);
             wrefresh(text_screen);
         }
     }
@@ -385,3 +387,4 @@ string text_scan(void) {
 
     return str;
 }
+
