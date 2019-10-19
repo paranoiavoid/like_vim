@@ -1,5 +1,6 @@
 /*
 Enterをインサートモードで押したとき後ろに文字がある場合文字も改行させる
+文字を入力したときに元からある文字が消えないようにする
 DelとBackspaceのキーコードが異なる(エラーの原因になる可能性)
 */
 
@@ -93,6 +94,7 @@ int input_char(void) { //入力された(特殊)文字のキーコードを返�
 }
 
 void normal_mode(int c) {
+
     if (c == 'i') {
         mode = INS;
         wmove(text_screen, cursor_y, cursor_x);
@@ -208,6 +210,22 @@ void command_mode(int c) {
         wrefresh(status_screen);
         wmove(text_screen, cursor_y, cursor_x);
         wrefresh(text_screen);
+    } else if (c == KEY_DEL) {
+        int y, x;
+        getyx(status_screen, y, x);
+        if (x > 1) {
+            wmove(status_screen, y, --x);
+            wdelch(status_screen);
+            wrefresh(status_screen);
+        }
+    } else if (c == KEY_BACKSPACE) {
+        int y, x;
+        getyx(status_screen, y, x);
+        if (x > 1) {
+            wmove(status_screen, y, --x);
+            wdelch(status_screen);
+            wrefresh(status_screen);
+        }
     } else {
         waddch(status_screen, (char)c);
         wrefresh(status_screen);
