@@ -1,1 +1,0 @@
-[ { "directory": "./", "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX10.15.sdk", "file": "/path/to/file.cc" } ]
