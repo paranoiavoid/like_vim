@@ -217,6 +217,13 @@ void command_mode(int c) {
             wmove(status_screen, y, --x);
             wdelch(status_screen);
             wrefresh(status_screen);
+        }else if(x==1){
+        mode = NOR;
+
+        werase(status_screen);
+        wrefresh(status_screen);
+        wmove(text_screen, cursor_y, cursor_x);
+        wrefresh(text_screen);
         }
     } else if (c == KEY_BACKSPACE) {
         int y, x;
@@ -225,6 +232,13 @@ void command_mode(int c) {
             wmove(status_screen, y, --x);
             wdelch(status_screen);
             wrefresh(status_screen);
+        }else if(x==1){
+        mode = NOR;
+
+        werase(status_screen);
+        wrefresh(status_screen);
+        wmove(text_screen, cursor_y, cursor_x);
+        wrefresh(text_screen);
         }
     } else {
         waddch(status_screen, (char)c);
