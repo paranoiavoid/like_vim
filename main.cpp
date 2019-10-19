@@ -1,9 +1,16 @@
+/*
+Enterをインサートモードで押したとき後ろに文字がある場合文字も改行させる
+DelとBackspaceのキーコードが異なる(エラーの原因になる可能性)
+*/
+
 #include <algorithm>
 #include <cstring>
 #include <curses.h>
 #include <string>
 #include <unistd.h>
-#define KEY_ESC 27 // Escにキーコードがないため定義する
+#define KEY_ESC 27  // Escにキーコードがないため定義する
+#define KEY_DEL 127 // Delにキーコードがないため定義する
+#define KEY_ENT 10 // テンキーでないEnterにキーコードがないため定義する
 
 using std::max;
 using std::min;
@@ -24,9 +31,10 @@ int cursor_x = 0; //インサートモードにおけるカーソルのx座標
 int cursor_y = 0; //インサートモードにおけるカーソルのy座標
 MODE mode;        //現在のモード
 int line_window_width = 5; //行番号を表示するスクリーンの幅
-int status_window_height = 4; //ステータス,コマンドを表示するスクリーンの高さ
-int line_top = 1; //画面の一番上の行番号
-int line_max = 1; //行が存在する最大の行番号
+int status_window_height = 2; //ステータス,コマンドを表示するスクリーンの高さ
+int line_top = 1;    //画面の一番上の行番号
+int line_max = 1;    //行が存在する最大の行番号
+MODE old_mode = NOR; // mode判定に入る一つ前のモード
 
 int input_char(void); //入力された(特殊)文字のキーコードを返す
 void normal_mode(int c);
@@ -36,10 +44,12 @@ void input_check(int c);
 string command_scan(void); //コマンドモードのコマンド文字列を読み取り返す
 void command_check(string str); //コマンドモードのコマンドを実行する
 void line_output(void);
+void mode_output(void);
 
 WINDOW *line_screen;
 WINDOW *status_screen;
 WINDOW *text_screen;
+WINDOW *mode_screen;
 
 int main(void) {
     initscr(); //初期化する
@@ -51,6 +61,8 @@ int main(void) {
                          line_window_width, 0, 0);
     status_screen = subwin(stdscr, status_window_height, window_size_x,
                            window_size_y - status_window_height, 0);
+    mode_screen = subwin(stdscr, 1, window_size_x,
+                         window_size_y - status_window_height - 1, 0);
     text_screen =
         subwin(stdscr, window_size_y - status_window_height,
                window_size_x - line_window_width, 0, line_window_width);
@@ -61,10 +73,11 @@ int main(void) {
     noecho();               //入力された文字を画面に表示しない
     keypad(stdscr, true);   //特殊なキーコードを使うようにする
 
-    wborder(line_screen, 0, 0, 0, 0, 0, 0, 0, 0);
+    // wborder(line_screen, 0, 0, 0, 0, 0, 0, 0, 0);
     line_output();
 
-    move(0,line_window_width);
+    move(0, line_window_width);
+    mode_output();
 
     while (1) {
         input_check(input_char());
@@ -124,13 +137,48 @@ void normal_mode(int c) {
             wdelch(text_screen);
             wrefresh(text_screen);
         }
+    } else if (c == 'O') {
+        mode = INS;
+        winsdelln(text_screen, 1);
+        wrefresh(text_screen);
+        cursor_x = 0;
+        wmove(text_screen, cursor_y, cursor_x);
+        wrefresh(text_screen);
+    } else if (c == 'o') {
+        mode = INS;
+        wmove(text_screen, ++cursor_y, cursor_x);
+        winsdelln(text_screen, 1);
+        wrefresh(text_screen);
+        cursor_x = 0;
+        wmove(text_screen, cursor_y, cursor_x);
+        wrefresh(text_screen);
     }
 }
 void insert_mode(int c) {
+    getyx(text_screen, cursor_y, cursor_x);
+
     if (c == KEY_ESC) {
         mode = NOR;
-        getyx(text_screen, cursor_y, cursor_x);
         wmove(text_screen, cursor_y, --cursor_x);
+        wrefresh(text_screen);
+    } else if (c == KEY_DEL) {
+        if (cursor_x > 0) {
+            wmove(text_screen, cursor_y, --cursor_x);
+            wdelch(text_screen);
+            wrefresh(text_screen);
+        }
+    } else if (c == KEY_BACKSPACE) {
+        if (cursor_x > 0) {
+            wmove(text_screen, cursor_y, --cursor_x);
+            wdelch(text_screen);
+            wrefresh(text_screen);
+        }
+    } else if (c == KEY_ENT) {
+        wmove(text_screen, ++cursor_y, cursor_x);
+        winsdelln(text_screen, 1);
+        wrefresh(text_screen);
+        cursor_x = 0;
+        wmove(text_screen, cursor_y, cursor_x);
         wrefresh(text_screen);
     } else {
         waddch(text_screen, (char)c);
@@ -140,7 +188,7 @@ void insert_mode(int c) {
 }
 
 void command_mode(int c) {
-    if (c == '\n') {
+    if (c == KEY_ENT) {
         mode = NOR;
 
         string str = command_scan();
@@ -172,6 +220,7 @@ void input_check(int c) {
     } else if (mode == COM) {
         command_mode(c);
     }
+    mode_output();
 }
 
 string command_scan(void) {
@@ -210,9 +259,30 @@ void command_check(string str) {
 }
 
 void line_output(void) {
-    for (int i = 1; i <= 20; i++) {
+    for (int i = 1; i <= 40; i++) {
         char tmp[10];
         snprintf(tmp, 10, "%d", i);
         mvwaddstr(line_screen, i - 1, 0, tmp);
     }
+}
+
+void mode_output(void) {
+    if (old_mode != mode) {
+        werase(mode_screen);
+        if (mode == NOR) {
+            waddstr(mode_screen, "NOR");
+            wrefresh(mode_screen);
+        } else if (mode == INS) {
+            waddstr(mode_screen, "INS");
+            wrefresh(mode_screen);
+        } else if (mode == VIS) {
+
+        } else if (mode == COM) {
+            waddstr(mode_screen, "COM");
+            wrefresh(mode_screen);
+        }
+        wmove(text_screen, cursor_y, cursor_x);
+        wrefresh(text_screen);
+    }
+    old_mode = mode;
 }
