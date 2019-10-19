@@ -140,6 +140,7 @@ void normal_mode(int c) {
     } else if (c == 'O') {
         mode = INS;
         winsdelln(text_screen, 1);
+        line_max++;
         wrefresh(text_screen);
         cursor_x = 0;
         wmove(text_screen, cursor_y, cursor_x);
@@ -148,6 +149,7 @@ void normal_mode(int c) {
         mode = INS;
         wmove(text_screen, ++cursor_y, cursor_x);
         winsdelln(text_screen, 1);
+        line_max++;
         wrefresh(text_screen);
         cursor_x = 0;
         wmove(text_screen, cursor_y, cursor_x);
@@ -176,6 +178,7 @@ void insert_mode(int c) {
     } else if (c == KEY_ENT) {
         wmove(text_screen, ++cursor_y, cursor_x);
         winsdelln(text_screen, 1);
+        line_max++;
         wrefresh(text_screen);
         cursor_x = 0;
         wmove(text_screen, cursor_y, cursor_x);
@@ -221,6 +224,7 @@ void input_check(int c) {
         command_mode(c);
     }
     mode_output();
+    line_output();
 }
 
 string command_scan(void) {
@@ -259,11 +263,15 @@ void command_check(string str) {
 }
 
 void line_output(void) {
-    for (int i = 1; i <= 40; i++) {
+    for (int i = 1; i <= line_max; i++) {
         char tmp[10];
         snprintf(tmp, 10, "%d", i);
         mvwaddstr(line_screen, i - 1, 0, tmp);
     }
+    wrefresh(line_screen);
+    getyx(text_screen, cursor_y, cursor_x);
+    wmove(text_screen, cursor_y, cursor_x);
+    wrefresh(text_screen);
 }
 
 void mode_output(void) {
