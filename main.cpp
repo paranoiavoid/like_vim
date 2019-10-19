@@ -186,8 +186,8 @@ void insert_mode(int c) {
         wmove(text_screen, cursor_y, cursor_x);
         wrefresh(text_screen);
     } else {
-        waddch(text_screen, (char)c);
-        // winsch(text_screen,(char)c);
+        winsch(text_screen,(char)c);
+        wmove(text_screen,cursor_y,++cursor_x);
         wrefresh(text_screen);
     }
 }
