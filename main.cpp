@@ -37,11 +37,11 @@ int cursor_y = 0; //インサートモードにおけるカーソルのy座標
 MODE mode;        //現在のモード
 int line_window_width = 5; //行番号を表示するスクリーンの幅
 int status_window_height = 2; //ステータス,コマンドを表示するスクリーンの高さ
-int line_top = 1; //画面の一番上の行番号
-int line_max = 1; //行が存在する最大の行番号
-// MODE old_mode = NOR;         // mode判定に入る一つ前のモード
+int line_top = 1;            //画面の一番上の行番号
+int line_max = 1;            //行が存在する最大の行番号
 vector<string> text(100000); //テキストを保存しておく二次元文字配列
 string nor_com;              //ノーマルモードのコマンドを格納
+//ノーマルモードのコマンドをリスト化
 vector<string> nor_com_list = {"i", "a", "I", "h", "j", "k", "l", ":",
                                "u", "d", "x", "X", "O", "o", "q", "bb"};
 
@@ -111,6 +111,12 @@ void normal_mode(int c) {
     nor_com.push_back((char)c);
     if (normal_command_check() == false) {
         nor_com = "";
+        if (c == ':') {
+            mode = COM;
+            werase(status_screen);
+            waddch(status_screen, (char)c);
+            wrefresh(status_screen);
+        }
         return;
     }
 
@@ -230,7 +236,6 @@ void normal_mode(int c) {
         }
         nor_com = "";
     }
-
 }
 void insert_mode(int c) {
     getyx(text_screen, cursor_y, cursor_x);
