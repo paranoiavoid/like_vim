@@ -37,10 +37,13 @@ int cursor_y = 0; //インサートモードにおけるカーソルのy座標
 MODE mode;        //現在のモード
 int line_window_width = 5; //行番号を表示するスクリーンの幅
 int status_window_height = 2; //ステータス,コマンドを表示するスクリーンの高さ
-int line_top = 1;            //画面の一番上の行番号
-int line_max = 1;            //行が存在する最大の行番号
-MODE old_mode = NOR;         // mode判定に入る一つ前のモード
+int line_top = 1; //画面の一番上の行番号
+int line_max = 1; //行が存在する最大の行番号
+// MODE old_mode = NOR;         // mode判定に入る一つ前のモード
 vector<string> text(100000); //テキストを保存しておく二次元文字配列
+string nor_com;              //ノーマルモードのコマンドを格納
+vector<string> nor_com_list = {"i", "a", "I", "h", "j", "k", "l", ":",
+                               "u", "d", "x", "X", "O", "o", "q", "bb"};
 
 int input_char(void); //入力された(特殊)文字のキーコードを返す
 void normal_mode(int c);
@@ -52,6 +55,8 @@ void command_check(string str); //コマンドモードのコマンドを実行�
 void line_output(void);
 void mode_output(void);
 string text_scan(void);
+bool normal_command_check(
+    void); //ノーマルモードのコマンドが現時点で存在する可能性があるか判定
 
 WINDOW *line_screen;
 WINDOW *status_screen;
@@ -103,6 +108,130 @@ int input_char(void) { //入力された(特殊)文字のキーコードを返�
 
 void normal_mode(int c) {
 
+    nor_com.push_back((char)c);
+    if (normal_command_check() == false) {
+        nor_com = "";
+        return;
+    }
+
+    if (nor_com == "i") {
+        mode = INS;
+        wmove(text_screen, cursor_y, cursor_x);
+        wrefresh(text_screen);
+        nor_com = "";
+    } else if (nor_com == "a") {
+        mode = INS;
+        wmove(text_screen, cursor_y, ++cursor_x);
+        wrefresh(text_screen);
+        nor_com = "";
+    } else if (nor_com == "I") {
+        mode = INS;
+        cursor_x = 0;
+        wmove(text_screen, cursor_y, cursor_x);
+        wrefresh(text_screen);
+        nor_com = "";
+    } else if (nor_com == "h") {
+        cursor_x = max(cursor_x - 1, 0);
+        wmove(text_screen, cursor_y, cursor_x);
+        wrefresh(text_screen);
+        nor_com = "";
+    } else if (nor_com == "j") {
+        if (cursor_y < line_max - line_top) {
+            wmove(text_screen, ++cursor_y, cursor_x);
+            wrefresh(text_screen);
+        }
+        nor_com = "";
+    } else if (nor_com == "k") {
+        cursor_y = max(cursor_y - 1, 0);
+        wmove(text_screen, cursor_y, cursor_x);
+        wrefresh(text_screen);
+        nor_com = "";
+    } else if (nor_com == "l") {
+        wmove(text_screen, cursor_y, ++cursor_x);
+        wrefresh(text_screen);
+        nor_com = "";
+    } else if (nor_com == ":") {
+        mode = COM;
+        waddch(status_screen, (char)c);
+        wrefresh(status_screen);
+        nor_com = "";
+    } else if (nor_com == "u") {
+        if (line_top < line_max) {
+            wmove(text_screen, 0, 0);
+            text[line_top++] = text_scan();
+            wscrl(text_screen, 1);
+            wmove(text_screen, --cursor_y, cursor_x);
+            wrefresh(text_screen);
+            wscrl(line_screen, 1);
+            wrefresh(line_screen);
+        }
+        nor_com = "";
+    } else if (nor_com == "d") {
+        if (line_top > 1) {
+            wscrl(text_screen, -1);
+            wmove(text_screen, 0, 0);
+            winsstr(text_screen, text[--line_top].c_str());
+            wmove(text_screen, ++cursor_y, cursor_x);
+            wrefresh(text_screen);
+        }
+        nor_com = "";
+    } else if (nor_com == "x") {
+        wdelch(text_screen);
+        wrefresh(text_screen);
+        nor_com = "";
+    } else if (nor_com == "X") {
+        if (cursor_x > 0) {
+            wmove(text_screen, cursor_y, --cursor_x);
+            wdelch(text_screen);
+            wrefresh(text_screen);
+        }
+        nor_com = "";
+    } else if (nor_com == "O") {
+        mode = INS;
+        winsdelln(text_screen, 1);
+        line_max++;
+        wrefresh(text_screen);
+        cursor_x = 0;
+        wmove(text_screen, cursor_y, cursor_x);
+        wrefresh(text_screen);
+        nor_com = "";
+    } else if (nor_com == "o") {
+        mode = INS;
+        wmove(text_screen, ++cursor_y, cursor_x);
+        winsdelln(text_screen, 1);
+        line_max++;
+        wrefresh(text_screen);
+        cursor_x = 0;
+        wmove(text_screen, cursor_y, cursor_x);
+        wrefresh(text_screen);
+        nor_com = "";
+    } else if (nor_com == "q") {
+        if (line_max > 1 && line_max > line_top) {
+            wdeleteln(text_screen);
+            line_max--;
+            wmove(text_screen, min(cursor_y, line_max - line_top), 0);
+            wrefresh(text_screen);
+        } else if (line_max == 1) {
+            wdeleteln(text_screen);
+            wmove(text_screen, min(cursor_y, line_max - line_top), 0);
+            wrefresh(text_screen);
+        }
+        nor_com = "";
+    } else if (nor_com == "bb") {
+        if (line_max > 1 && line_max > line_top) {
+            wdeleteln(text_screen);
+            line_max--;
+            wmove(text_screen, min(cursor_y, line_max - line_top), 0);
+            wrefresh(text_screen);
+        } else if (line_max == 1) {
+            wdeleteln(text_screen);
+            wmove(text_screen, min(cursor_y, line_max - line_top), 0);
+            wrefresh(text_screen);
+        }
+        nor_com = "";
+    }
+
+    /*
     if (c == 'i') {
         mode = INS;
         wmove(text_screen, cursor_y, cursor_x);
@@ -192,6 +321,7 @@ void normal_mode(int c) {
             wrefresh(text_screen);
         }
     }
+    */
 }
 void insert_mode(int c) {
     getyx(text_screen, cursor_y, cursor_x);
@@ -347,24 +477,28 @@ void line_output(void) {
 }
 
 void mode_output(void) {
-    if (old_mode != mode) {
-        werase(mode_screen);
-        if (mode == NOR) {
-            waddstr(mode_screen, "NOR");
-            wrefresh(mode_screen);
-        } else if (mode == INS) {
-            waddstr(mode_screen, "INS");
-            wrefresh(mode_screen);
-        } else if (mode == VIS) {
+    werase(mode_screen);
+    if (mode == NOR) {
+        waddstr(mode_screen, "NOR");
+        wrefresh(mode_screen);
 
-        } else if (mode == COM) {
-            waddstr(mode_screen, "COM");
-            wrefresh(mode_screen);
-        }
-        wmove(text_screen, cursor_y, cursor_x);
-        wrefresh(text_screen);
+        werase(status_screen);
+        wmove(status_screen, 1, window_size_x - 15);
+        waddstr(status_screen, nor_com.c_str());
+        wmove(status_screen, 0, 0);
+        wrefresh(status_screen);
+    } else if (mode == INS) {
+        waddstr(mode_screen, "INS");
+        wrefresh(mode_screen);
+    } else if (mode == VIS) {
+
+    } else if (mode == COM) {
+        waddstr(mode_screen, "COM");
+        wrefresh(mode_screen);
     }
-    old_mode = mode;
+    getyx(text_screen, cursor_y, cursor_x);
+    wmove(text_screen, cursor_y, cursor_x);
+    wrefresh(text_screen);
 }
 
 string text_scan(void) {
@@ -388,3 +522,24 @@ string text_scan(void) {
     return str;
 }
 
+bool normal_command_check(void) {
+    bool flag = false;
+    for (int i = 0; i <= nor_com_list.size() - 1; i++) {
+        if (nor_com_list[i].size() < nor_com.size()) {
+            continue;
+        }
+        for (int j = 0; j <= nor_com.size() - 1; j++) {
+            if (nor_com[j] != nor_com_list[i][j]) {
+                break;
+            }
+            if (j == nor_com.size() - 1) {
+                flag = true;
+            }
+        }
+        if (flag == true) {
+            break;
+        }
+    }
+
+    return flag;
+}
