@@ -1,4 +1,7 @@
 /*
+画面下まで入力がきていこう入力した文字が画面に表示されなくなる
+画面下に入力が来た時などの処理
+bbやx,Xなどで文字を削除コピーしたときにペーストできる様に配列に保存する
 line_outputのlimの範囲がずれている可能性がある
 右端まで文字が表示されるとそれ以降入力しても文字が消えるのを解消する
 DelとBackspaceのキーコードが異なる(エラーの原因になる可能性)
@@ -36,15 +39,15 @@ int cursor_y = 0; //インサートモードにおけるカーソルのy座標
 MODE mode;        //現在のモード
 int line_window_width = 5; //行番号を表示するスクリーンの幅
 int status_window_height = 2; //ステータス,コマンドを表示するスクリーンの高さ
-int line_top = 1;              //画面の一番上の行番号
-int line_max = 1;              //行が存在する最大の行番号
-vector<string> text(MAX_LINE); //テキストを保存しておく二次元文字配列
+int line_top = 1;                  //画面の一番上の行番号
+int line_max = 1;                  //行が存在する最大の行番号
+vector<string> text(MAX_LINE, ""); //テキストを保存しておく二次元文字配列
 vector<int> text_size(MAX_LINE, 0); //各行のテキストの文字数を管理
 string nor_com; //ノーマルモードのコマンドを格納
 //ノーマルモードのコマンドをリスト化
-vector<string> nor_com_list = {"i", "a",  "I", "A", "h", "j", "k",
-                               "l", ":",  "u", "d", "x", "X", "O",
-                               "o", "bb", "$", "0", "gg","zz"};
+vector<string> nor_com_list = {"i", "a",  "I", "A", "h",  "j",  "k",
+                               "l", ":",  "u", "d", "x",  "X",  "O",
+                               "o", "bb", "$", "0", "gg", "zt", "H"};
 
 int input_char(void); //入力された(特殊)文字のキーコードを返す
 void normal_mode(int c);
@@ -306,16 +309,21 @@ void normal_mode(int c) {
         wmove(text_screen, cursor_y, cursor_x);
         wrefresh(text_screen);
         nor_com = "";
-    } else if (nor_com == "zz") {
+    } else if (nor_com == "zt") {
         text_save();
-        line_top =now_line();
+        line_top = now_line();
         text_output();
         cursor_y = 0;
         wmove(text_screen, cursor_y, cursor_x);
         wrefresh(text_screen);
         nor_com = "";
+    } else if (nor_com == "H") {
+        cursor_y = 0;
+        cursor_x = 0;
+        wmove(text_screen, cursor_y, cursor_x);
+        wrefresh(text_screen);
+        nor_com = "";
     }
-
 }
 void insert_mode(int c) {
     getyx(text_screen, cursor_y, cursor_x);
@@ -355,12 +363,25 @@ void insert_mode(int c) {
             wrefresh(text_screen);
         }
 
-        wmove(text_screen, ++cursor_y, 0);
-        winsdelln(text_screen, 1);
-        line_max++;
-        wrefresh(text_screen);
-        waddstr(text_screen, str);
-        wrefresh(text_screen);
+        if (cursor_y >= window_size_y - status_window_height - 2) {
+            text_save();
+            line_top++;
+            line_max++;
+            text_output();
+            wrefresh(text_screen);
+            wmove(text_screen, cursor_y, 0);
+            wrefresh(text_screen);
+            waddstr(text_screen, str);
+            wrefresh(text_screen);
+
+        } else {
+            wmove(text_screen, ++cursor_y, 0);
+            winsdelln(text_screen, 1);
+            line_max++;
+            wrefresh(text_screen);
+            waddstr(text_screen, str);
+            wrefresh(text_screen);
+        }
 
         free(str);
 
@@ -580,8 +601,10 @@ int now_line(void) {
 }
 
 void text_save(void) {
-    for (int i = line_top;
-         i <= min(line_max, window_size_y - status_window_height - 1); i++) {
+    for (int i = line_top; i <= line_max; i++) {
+        if (i - line_top >= window_size_y - status_window_height - 1) {
+            break;
+        }
         wmove(text_screen, i - line_top, 0);
         text[i] = text_scan();
         wrefresh(text_screen);
@@ -593,8 +616,10 @@ void text_save(void) {
 void text_output(void) {
     werase(text_screen);
 
-    for (int i = line_top;
-         i <= min(line_max, window_size_y - status_window_height - 1); i++) {
+    for (int i = line_top; i <= line_max; i++) {
+        if (i - line_top >= window_size_y - status_window_height - 1) {
+            break;
+        }
         wmove(text_screen, i - line_top, 0);
         waddstr(text_screen, text[i].c_str());
         wrefresh(text_screen);
