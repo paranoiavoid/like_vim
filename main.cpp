@@ -1,6 +1,4 @@
 /*
-画面下まで入力がきていこう入力した文字が画面に表示されなくなる
-画面下に入力が来た時などの処理
 bbやx,Xなどで文字を削除コピーしたときにペーストできる様に配列に保存する
 line_outputのlimの範囲がずれている可能性がある
 右端まで文字が表示されるとそれ以降入力しても文字が消えるのを解消する
@@ -45,9 +43,9 @@ vector<string> text(MAX_LINE, ""); //テキストを保存しておく二次元�
 vector<int> text_size(MAX_LINE, 0); //各行のテキストの文字数を管理
 string nor_com; //ノーマルモードのコマンドを格納
 //ノーマルモードのコマンドをリスト化
-vector<string> nor_com_list = {"i", "a",  "I", "A", "h",  "j",  "k",
-                               "l", ":",  "u", "d", "x",  "X",  "O",
-                               "o", "bb", "$", "0", "gg", "zt", "H"};
+vector<string> nor_com_list = {"i", "a", "I",  "A", "h",  "j", "k", "l",
+                               ":", "u", "d",  "x", "X",  "O", "o", "bb",
+                               "$", "0", "gg", "G", "zt", "H"};
 
 int input_char(void); //入力された(特殊)文字のキーコードを返す
 void normal_mode(int c);
@@ -306,6 +304,22 @@ void normal_mode(int c) {
         text_output();
         cursor_y = 0;
         cursor_x = 0;
+        wmove(text_screen, cursor_y, cursor_x);
+        wrefresh(text_screen);
+        nor_com = "";
+    } else if (nor_com == "G") {
+        text_save();
+        if (line_max < line_top + (window_size_y - status_window_height -
+                                   1)) { //最終行が画面内にある場合
+            cursor_y = line_max - line_top;
+            cursor_x = 0;
+        } else { //最終行が画面内にない場合
+            line_top =
+                line_max - (window_size_y - status_window_height - 1) + 1;
+            text_output();
+            cursor_y = (window_size_y - status_window_height - 1) - 1;
+            cursor_x = 0;
+        }
         wmove(text_screen, cursor_y, cursor_x);
         wrefresh(text_screen);
         nor_com = "";
