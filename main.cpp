@@ -43,8 +43,8 @@ vector<string> text(MAX_LINE); //テキストを保存しておく二次元文�
 vector<int> text_size(MAX_LINE, 0); //各行のテキストの文字数を管理
 string nor_com; //ノーマルモードのコマンドを格納
 //ノーマルモードのコマンドをリスト化
-vector<string> nor_com_list = {"i", "a", "I", "h", "j", "k", "l",  ":", "u",
-                               "d", "x", "X", "O", "o", "q", "bb", "$", "0"};
+vector<string> nor_com_list = {"i", "a", "I", "h", "j", "k",  "l", ":", "u",
+                               "d", "x", "X", "O", "o", "bb", "$", "0"};
 
 int input_char(void); //入力された(特殊)文字のキーコードを返す
 void normal_mode(int c);
@@ -145,10 +145,8 @@ void normal_mode(int c) {
         nor_com = "";
     } else if (nor_com == "j") {
         if (cursor_y < line_max - line_top) {
-            if (now_line() > 1) {
-                if (text_size[now_line() + 1] <= cursor_x) {
-                    cursor_x = max(text_size[now_line() + 1] - 1, 0);
-                }
+            if (text_size[now_line() + 1] <= cursor_x) {
+                cursor_x = max(text_size[now_line() + 1] - 1, 0);
             }
             wmove(text_screen, ++cursor_y, cursor_x);
             wrefresh(text_screen);
@@ -196,12 +194,12 @@ void normal_mode(int c) {
         }
         nor_com = "";
     } else if (nor_com == "x") {
-        if(text_size[now_line()]>=1){
-        wdelch(text_screen);
-        text_size[now_line()]--;
-        cursor_x=min(cursor_x,text_size[now_line()]-1);
-        wmove(text_screen,cursor_y,cursor_x);
-        wrefresh(text_screen);
+        if (text_size[now_line()] >= 1) {
+            wdelch(text_screen);
+            text_size[now_line()]--;
+            cursor_x = min(cursor_x, text_size[now_line()] - 1);
+            wmove(text_screen, cursor_y, cursor_x);
+            wrefresh(text_screen);
         }
         nor_com = "";
     } else if (nor_com == "X") {
@@ -214,6 +212,12 @@ void normal_mode(int c) {
         nor_com = "";
     } else if (nor_com == "O") {
         mode = INS;
+
+        for (int i = MAX_LINE - 2; i >= now_line(); i--) {
+            text_size[i + 1] = text_size[i];
+        }
+        text_size[now_line()] = 0;
+
         winsdelln(text_screen, 1);
         line_max++;
         wrefresh(text_screen);
@@ -223,6 +227,12 @@ void normal_mode(int c) {
         nor_com = "";
     } else if (nor_com == "o") {
         mode = INS;
+
+        for (int i = MAX_LINE - 2; i >= now_line() + 1; i--) {
+            text_size[i + 1] = text_size[i];
+        }
+        text_size[now_line() + 1] = 0;
+
         wmove(text_screen, ++cursor_y, cursor_x);
         winsdelln(text_screen, 1);
         line_max++;
@@ -231,29 +241,17 @@ void normal_mode(int c) {
         wmove(text_screen, cursor_y, cursor_x);
         wrefresh(text_screen);
         nor_com = "";
-    } else if (nor_com == "q") {
-        if (line_max > 1 && line_max > line_top) {
-            wdeleteln(text_screen);
-            line_max--;
-            wmove(text_screen, min(cursor_y, line_max - line_top), 0);
-            wrefresh(text_screen);
-        } else if (line_max == 1) {
-            wdeleteln(text_screen);
-            wmove(text_screen, min(cursor_y, line_max - line_top), 0);
-            wrefresh(text_screen);
-        }
-        nor_com = "";
     } else if (nor_com == "bb") {
         if (line_max > 1 && line_max > line_top) {
             wdeleteln(text_screen);
-            for(int i=now_line();i<=MAX_LINE-2;i++){
-                text_size[i]=text_size[i+1];
+            for (int i = now_line(); i <= MAX_LINE - 2; i++) {
+                text_size[i] = text_size[i + 1];
             }
             line_max--;
             wmove(text_screen, min(cursor_y, line_max - line_top), 0);
             wrefresh(text_screen);
         } else if (line_max == 1) {
-            text_size[line_max]=0;
+            text_size[line_max] = 0;
             wdeleteln(text_screen);
             wmove(text_screen, min(cursor_y, line_max - line_top), 0);
             wrefresh(text_screen);
