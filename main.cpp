@@ -1,7 +1,6 @@
 /*
 line_outputのlimの範囲がずれている可能性がある
 右端まで文字が表示されるとそれ以降入力しても文字が消えるのを解消する
-Enterをインサートモードで押したとき後ろに文字がある場合文字も改行させる
 文字を入力したときに元からある文字が消えないようにする
 DelとBackspaceのキーコードが異なる(エラーの原因になる可能性)
 */
@@ -44,8 +43,8 @@ vector<string> text(MAX_LINE); //テキストを保存しておく二次元文�
 vector<int> text_size(MAX_LINE, 0); //各行のテキストの文字数を管理
 string nor_com; //ノーマルモードのコマンドを格納
 //ノーマルモードのコマンドをリスト化
-vector<string> nor_com_list = {"i", "a", "I", "h", "j", "k", "l", ":",
-                               "u", "d", "x", "X", "O", "o", "q", "bb"};
+vector<string> nor_com_list = {"i", "a", "I", "h", "j", "k", "l",  ":", "u",
+                               "d", "x", "X", "O", "o", "q", "bb", "$", "0"};
 
 int input_char(void); //入力された(特殊)文字のキーコードを返す
 void normal_mode(int c);
@@ -197,13 +196,19 @@ void normal_mode(int c) {
         }
         nor_com = "";
     } else if (nor_com == "x") {
+        if(text_size[now_line()]>=1){
         wdelch(text_screen);
+        text_size[now_line()]--;
+        cursor_x=min(cursor_x,text_size[now_line()]-1);
+        wmove(text_screen,cursor_y,cursor_x);
         wrefresh(text_screen);
+        }
         nor_com = "";
     } else if (nor_com == "X") {
         if (cursor_x > 0) {
             wmove(text_screen, cursor_y, --cursor_x);
             wdelch(text_screen);
+            text_size[now_line()]--;
             wrefresh(text_screen);
         }
         nor_com = "";
@@ -241,14 +246,28 @@ void normal_mode(int c) {
     } else if (nor_com == "bb") {
         if (line_max > 1 && line_max > line_top) {
             wdeleteln(text_screen);
+            for(int i=now_line();i<=MAX_LINE-2;i++){
+                text_size[i]=text_size[i+1];
+            }
             line_max--;
             wmove(text_screen, min(cursor_y, line_max - line_top), 0);
             wrefresh(text_screen);
         } else if (line_max == 1) {
+            text_size[line_max]=0;
             wdeleteln(text_screen);
             wmove(text_screen, min(cursor_y, line_max - line_top), 0);
             wrefresh(text_screen);
         }
+        nor_com = "";
+    } else if (nor_com == "$") {
+        cursor_x = text_size[now_line()] - 1;
+        wmove(text_screen, cursor_y, cursor_x);
+        wrefresh(text_screen);
+        nor_com = "";
+    } else if (nor_com == "0") {
+        cursor_x = 0;
+        wmove(text_screen, cursor_y, cursor_x);
+        wrefresh(text_screen);
         nor_com = "";
     }
 }
