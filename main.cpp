@@ -1,7 +1,6 @@
 /*
 line_outputのlimの範囲がずれている可能性がある
 右端まで文字が表示されるとそれ以降入力しても文字が消えるのを解消する
-文字を入力したときに元からある文字が消えないようにする
 DelとBackspaceのキーコードが異なる(エラーの原因になる可能性)
 */
 
@@ -43,8 +42,8 @@ vector<string> text(MAX_LINE); //テキストを保存しておく二次元文�
 vector<int> text_size(MAX_LINE, 0); //各行のテキストの文字数を管理
 string nor_com; //ノーマルモードのコマンドを格納
 //ノーマルモードのコマンドをリスト化
-vector<string> nor_com_list = {"i", "a", "I", "h", "j", "k",  "l", ":", "u",
-                               "d", "x", "X", "O", "o", "bb", "$", "0"};
+vector<string> nor_com_list = {"i", "a", "I", "A", "h", "j", "k",  "l", ":",
+                               "u", "d", "x", "X", "O", "o", "bb", "$", "0"};
 
 int input_char(void); //入力された(特殊)文字のキーコードを返す
 void normal_mode(int c);
@@ -129,12 +128,22 @@ void normal_mode(int c) {
         nor_com = "";
     } else if (nor_com == "a") {
         mode = INS;
-        wmove(text_screen, cursor_y, ++cursor_x);
+        if (text_size[now_line()] == 0) {
+            wmove(text_screen, cursor_y, cursor_x);
+        } else {
+            wmove(text_screen, cursor_y, ++cursor_x);
+        }
         wrefresh(text_screen);
         nor_com = "";
     } else if (nor_com == "I") {
         mode = INS;
         cursor_x = 0;
+        wmove(text_screen, cursor_y, cursor_x);
+        wrefresh(text_screen);
+        nor_com = "";
+    } else if (nor_com == "A") {
+        mode = INS;
+        cursor_x = text_size[now_line()];
         wmove(text_screen, cursor_y, cursor_x);
         wrefresh(text_screen);
         nor_com = "";
