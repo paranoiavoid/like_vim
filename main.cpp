@@ -15,6 +15,7 @@ DelとBackspaceのキーコードが異なる(エラーの原因になる可能�
 #define KEY_ESC 27  // Escにキーコードがないため定義する
 #define KEY_DEL 127 // Delにキーコードがないため定義する
 #define KEY_ENT 10 // テンキーでないEnterにキーコードがないため定義する
+#define MAX_LINE 100000 //テキストの最大行数
 
 using std::max;
 using std::min;
@@ -37,10 +38,11 @@ int cursor_y = 0; //インサートモードにおけるカーソルのy座標
 MODE mode;        //現在のモード
 int line_window_width = 5; //行番号を表示するスクリーンの幅
 int status_window_height = 2; //ステータス,コマンドを表示するスクリーンの高さ
-int line_top = 1;            //画面の一番上の行番号
-int line_max = 1;            //行が存在する最大の行番号
-vector<string> text(100000); //テキストを保存しておく二次元文字配列
-string nor_com;              //ノーマルモードのコマンドを格納
+int line_top = 1;              //画面の一番上の行番号
+int line_max = 1;              //行が存在する最大の行番号
+vector<string> text(MAX_LINE); //テキストを保存しておく二次元文字配列
+vector<int> text_size(MAX_LINE, 0); //各行のテキストの文字数を管理
+string nor_com; //ノーマルモードのコマンドを格納
 //ノーマルモードのコマンドをリスト化
 vector<string> nor_com_list = {"i", "a", "I", "h", "j", "k", "l", ":",
                                "u", "d", "x", "X", "O", "o", "q", "bb"};
@@ -57,6 +59,7 @@ void mode_output(void);
 string text_scan(void);
 bool normal_command_check(
     void); //ノーマルモードのコマンドが現時点で存在する可能性があるか判定
+int now_line(void); //今何行目のテキストにカーソルが乗っているか判定
 
 WINDOW *line_screen;
 WINDOW *status_screen;
@@ -143,18 +146,30 @@ void normal_mode(int c) {
         nor_com = "";
     } else if (nor_com == "j") {
         if (cursor_y < line_max - line_top) {
+            if (now_line() > 1) {
+                if (text_size[now_line() + 1] <= cursor_x) {
+                    cursor_x = max(text_size[now_line() + 1] - 1, 0);
+                }
+            }
             wmove(text_screen, ++cursor_y, cursor_x);
             wrefresh(text_screen);
         }
         nor_com = "";
     } else if (nor_com == "k") {
+        if (now_line() > 1) {
+            if (text_size[now_line() - 1] <= cursor_x) {
+                cursor_x = max(text_size[now_line() - 1] - 1, 0);
+            }
+        }
         cursor_y = max(cursor_y - 1, 0);
         wmove(text_screen, cursor_y, cursor_x);
         wrefresh(text_screen);
         nor_com = "";
     } else if (nor_com == "l") {
-        wmove(text_screen, cursor_y, ++cursor_x);
-        wrefresh(text_screen);
+        if (text_size[now_line()] >= cursor_x + 2) {
+            wmove(text_screen, cursor_y, ++cursor_x);
+            wrefresh(text_screen);
+        }
         nor_com = "";
     } else if (nor_com == ":") {
         mode = COM;
@@ -249,14 +264,42 @@ void insert_mode(int c) {
             wmove(text_screen, cursor_y, --cursor_x);
             wdelch(text_screen);
             wrefresh(text_screen);
+            text_size[now_line()]--;
         }
     } else if (c == KEY_BACKSPACE) {
         if (cursor_x > 0) {
             wmove(text_screen, cursor_y, --cursor_x);
             wdelch(text_screen);
             wrefresh(text_screen);
+            text_size[now_line()]--;
         }
     } else if (c == KEY_ENT) {
+        int tmp; //改行させる文字数
+        tmp = text_size[now_line()] - cursor_x;
+        for (int i = MAX_LINE - 2; i >= now_line() + 1; i--) {
+            text_size[i + 1] = text_size[i];
+        }
+        text_size[now_line() + 1] = tmp;
+        text_size[now_line()] -= tmp;
+
+        int size = tmp + 100;
+        char *str = (char *)malloc(sizeof(char) * size);
+        winnstr(text_screen, str, tmp);
+        for (int i = 1; i <= tmp; i++) {
+            waddch(text_screen, ' ');
+            wrefresh(text_screen);
+        }
+
+        wmove(text_screen, ++cursor_y, 0);
+        winsdelln(text_screen, 1);
+        line_max++;
+        wrefresh(text_screen);
+        waddstr(text_screen, str);
+        wrefresh(text_screen);
+
+        free(str);
+
+        /*
         wmove(text_screen, ++cursor_y, cursor_x);
         winsdelln(text_screen, 1);
         line_max++;
@@ -264,10 +307,12 @@ void insert_mode(int c) {
         cursor_x = 0;
         wmove(text_screen, cursor_y, cursor_x);
         wrefresh(text_screen);
+        */
     } else {
         winsch(text_screen, (char)c);
         wmove(text_screen, cursor_y, ++cursor_x);
         wrefresh(text_screen);
+        text_size[now_line()]++;
     }
 }
 
@@ -349,9 +394,12 @@ string command_scan(void) {
 
     if (p == 0) {
         exit(1);
+    } else if (p == 4) {
+        exit(1);
     }
 
     string str = tmp_str; // char*型をstring型へ変換
+
     str.erase(remove(str.begin(), str.end(), ' '),
               str.end()); // string型に写した文字列から空白を全て削除
 
@@ -456,4 +504,10 @@ bool normal_command_check(void) {
     }
 
     return flag;
+}
+
+int now_line(void) {
+    int y, x;
+    getyx(text_screen, y, x);
+    return line_top + y;
 }
