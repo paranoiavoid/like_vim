@@ -42,8 +42,9 @@ vector<string> text(MAX_LINE); //テキストを保存しておく二次元文�
 vector<int> text_size(MAX_LINE, 0); //各行のテキストの文字数を管理
 string nor_com; //ノーマルモードのコマンドを格納
 //ノーマルモードのコマンドをリスト化
-vector<string> nor_com_list = {"i", "a", "I", "A", "h", "j", "k",  "l", ":",
-                               "u", "d", "x", "X", "O", "o", "bb", "$", "0"};
+vector<string> nor_com_list = {"i", "a",  "I", "A", "h", "j", "k",
+                               "l", ":",  "u", "d", "x", "X", "O",
+                               "o", "bb", "$", "0", "gg","zz"};
 
 int input_char(void); //入力された(特殊)文字のキーコードを返す
 void normal_mode(int c);
@@ -58,6 +59,8 @@ string text_scan(void);
 bool normal_command_check(
     void); //ノーマルモードのコマンドが現時点で存在する可能性があるか判定
 int now_line(void); //今何行目のテキストにカーソルが乗っているか判定
+void text_save(void);   //テキスト情報を保存する
+void text_output(void); //画面移動後のテキストを表示する
 
 WINDOW *line_screen;
 WINDOW *status_screen;
@@ -183,6 +186,7 @@ void normal_mode(int c) {
         wrefresh(status_screen);
         nor_com = "";
     } else if (nor_com == "u") {
+        /*
         if (line_top < line_max) {
             wmove(text_screen, 0, 0);
             text[line_top++] = text_scan();
@@ -192,12 +196,29 @@ void normal_mode(int c) {
             wscrl(line_screen, 1);
             wrefresh(line_screen);
         }
+        */
+        if (line_top < line_max) {
+            text_save();
+            line_top++;
+            text_output();
+            wmove(text_screen, --cursor_y, cursor_x);
+            wrefresh(text_screen);
+        }
         nor_com = "";
     } else if (nor_com == "d") {
+        /*
         if (line_top > 1) {
             wscrl(text_screen, -1);
             wmove(text_screen, 0, 0);
             winsstr(text_screen, text[--line_top].c_str());
+            wmove(text_screen, ++cursor_y, cursor_x);
+            wrefresh(text_screen);
+        }
+        */
+        if (line_top > 1) {
+            text_save();
+            line_top--;
+            text_output();
             wmove(text_screen, ++cursor_y, cursor_x);
             wrefresh(text_screen);
         }
@@ -276,7 +297,25 @@ void normal_mode(int c) {
         wmove(text_screen, cursor_y, cursor_x);
         wrefresh(text_screen);
         nor_com = "";
+    } else if (nor_com == "gg") {
+        text_save();
+        line_top = 1;
+        text_output();
+        cursor_y = 0;
+        cursor_x = 0;
+        wmove(text_screen, cursor_y, cursor_x);
+        wrefresh(text_screen);
+        nor_com = "";
+    } else if (nor_com == "zz") {
+        text_save();
+        line_top =now_line();
+        text_output();
+        cursor_y = 0;
+        wmove(text_screen, cursor_y, cursor_x);
+        wrefresh(text_screen);
+        nor_com = "";
     }
+
 }
 void insert_mode(int c) {
     getyx(text_screen, cursor_y, cursor_x);
@@ -407,6 +446,8 @@ void input_check(int c) {
     }
     mode_output();
     line_output();
+    text_save();
+    text_output();
 }
 
 string command_scan(void) {
@@ -536,4 +577,29 @@ int now_line(void) {
     int y, x;
     getyx(text_screen, y, x);
     return line_top + y;
+}
+
+void text_save(void) {
+    for (int i = line_top;
+         i <= min(line_max, window_size_y - status_window_height - 1); i++) {
+        wmove(text_screen, i - line_top, 0);
+        text[i] = text_scan();
+        wrefresh(text_screen);
+    }
+    wmove(text_screen, cursor_y, cursor_x);
+    wrefresh(text_screen);
+}
+
+void text_output(void) {
+    werase(text_screen);
+
+    for (int i = line_top;
+         i <= min(line_max, window_size_y - status_window_height - 1); i++) {
+        wmove(text_screen, i - line_top, 0);
+        waddstr(text_screen, text[i].c_str());
+        wrefresh(text_screen);
+    }
+
+    wmove(text_screen, cursor_y, cursor_x);
+    wrefresh(text_screen);
 }
