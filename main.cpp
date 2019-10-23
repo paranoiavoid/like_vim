@@ -1,4 +1,5 @@
 /*
+カーソルをjkで移動させるときに画面外にカーソルが移動するときに画面をスライドさせる
 bbやx,Xなどで文字を削除コピーしたときにペーストできる様に配列に保存する
 line_outputのlimの範囲がずれている可能性がある
 右端まで文字が表示されるとそれ以降入力しても文字が消えるのを解消する
@@ -157,23 +158,45 @@ void normal_mode(int c) {
         wrefresh(text_screen);
         nor_com = "";
     } else if (nor_com == "j") {
-        if (cursor_y < line_max - line_top) {
-            if (text_size[now_line() + 1] <= cursor_x) {
-                cursor_x = max(text_size[now_line() + 1] - 1, 0);
+        if (now_line() < line_max) {
+            if (cursor_y < (window_size_y - status_window_height - 1) - 1) {
+                if (text_size[now_line() + 1] <= cursor_x) {
+                    cursor_x = max(text_size[now_line() + 1] - 1, 0);
+                }
+                wmove(text_screen, ++cursor_y, cursor_x);
+                wrefresh(text_screen);
+            } else {
+                if (text_size[now_line() + 1] <= cursor_x) {
+                    cursor_x = max(text_size[now_line() + 1] - 1, 0);
+                }
+                text_save();
+                line_top++;
+                text_output();
+                wmove(text_screen, cursor_y, cursor_x);
+                wrefresh(text_screen);
             }
-            wmove(text_screen, ++cursor_y, cursor_x);
-            wrefresh(text_screen);
         }
         nor_com = "";
     } else if (nor_com == "k") {
         if (now_line() > 1) {
-            if (text_size[now_line() - 1] <= cursor_x) {
-                cursor_x = max(text_size[now_line() - 1] - 1, 0);
+            if (cursor_y >= 1) {
+                if (text_size[now_line() - 1] <= cursor_x) {
+                    cursor_x = max(text_size[now_line() - 1] - 1, 0);
+                }
+                cursor_y = max(cursor_y - 1, 0);
+                wmove(text_screen, cursor_y, cursor_x);
+                wrefresh(text_screen);
+            } else {
+                if (text_size[now_line() - 1] <= cursor_x) {
+                    cursor_x = max(text_size[now_line() - 1] - 1, 0);
+                }
+                text_save();
+                line_top--;
+                text_output();
+                wmove(text_screen, cursor_y, cursor_x);
+                wrefresh(text_screen);
             }
         }
-        cursor_y = max(cursor_y - 1, 0);
-        wmove(text_screen, cursor_y, cursor_x);
-        wrefresh(text_screen);
         nor_com = "";
     } else if (nor_com == "l") {
         if (text_size[now_line()] >= cursor_x + 2) {
