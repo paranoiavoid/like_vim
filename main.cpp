@@ -45,7 +45,8 @@ string nor_com; //ノーマルモードのコマンドを格納
 //ノーマルモードのコマンドをリスト化
 vector<string> nor_com_list = {
     "i", "a", "I", "A",  "h", "j", "k",  "l", ":",  /* "u", "d",*/ "x",
-    "X", "O", "o", "dd", "$", "0", "gg", "G", "zt", "H"};
+    "X", "O", "o", "dd", "$", "0", "gg", "G", "zt", "H",
+    "L"};
 
 int input_char(void); //入力された(特殊)文字のキーコードを返す
 void normal_mode(int c);
@@ -339,6 +340,13 @@ void normal_mode(int c) {
         nor_com = "";
     } else if (nor_com == "H") {
         cursor_y = 0;
+        cursor_x = 0;
+        wmove(text_screen, cursor_y, cursor_x);
+        wrefresh(text_screen);
+        nor_com = "";
+    } else if (nor_com == "L") {
+        cursor_y = min((window_size_y - status_window_height - 1) - 1,
+                       line_max - line_top);
         cursor_x = 0;
         wmove(text_screen, cursor_y, cursor_x);
         wrefresh(text_screen);
