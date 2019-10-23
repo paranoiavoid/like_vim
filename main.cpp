@@ -1,4 +1,5 @@
 /*
+カーソルが一時的に２箇所に現れるバグがある 
 bbやx,Xなどで文字を削除コピーしたときにペーストできる様に配列に保存する
 line_outputのlimの範囲がずれている可能性がある
 右端まで文字が表示されるとそれ以降入力しても文字が消えるのを解消する
@@ -46,7 +47,7 @@ string nor_com; //ノーマルモードのコマンドを格納
 vector<string> nor_com_list = {
     "i", "a", "I", "A",  "h", "j", "k",  "l", ":",  /* "u", "d",*/ "x",
     "X", "O", "o", "dd", "$", "0", "gg", "G", "zt", "H",
-    "L"};
+    "M", "L"};
 
 int input_char(void); //入力された(特殊)文字のキーコードを返す
 void normal_mode(int c);
@@ -344,7 +345,14 @@ void normal_mode(int c) {
         wmove(text_screen, cursor_y, cursor_x);
         wrefresh(text_screen);
         nor_com = "";
-    } else if (nor_com == "L") {
+    } else if (nor_com == "M") {
+        cursor_y = min((window_size_y - status_window_height - 1) - 1,
+                       line_max - line_top)/2;
+        cursor_x = 0;
+        wmove(text_screen, cursor_y, cursor_x);
+        wrefresh(text_screen);
+        nor_com = "";
+    }else if (nor_com == "L") {
         cursor_y = min((window_size_y - status_window_height - 1) - 1,
                        line_max - line_top);
         cursor_x = 0;
