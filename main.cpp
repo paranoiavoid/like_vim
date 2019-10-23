@@ -1,5 +1,4 @@
 /*
-カーソルをjkで移動させるときに画面外にカーソルが移動するときに画面をスライドさせる
 bbやx,Xなどで文字を削除コピーしたときにペーストできる様に配列に保存する
 line_outputのlimの範囲がずれている可能性がある
 右端まで文字が表示されるとそれ以降入力しても文字が消えるのを解消する
@@ -44,9 +43,9 @@ vector<string> text(MAX_LINE, ""); //テキストを保存しておく二次元�
 vector<int> text_size(MAX_LINE, 0); //各行のテキストの文字数を管理
 string nor_com; //ノーマルモードのコマンドを格納
 //ノーマルモードのコマンドをリスト化
-vector<string> nor_com_list = {"i", "a", "I",  "A", "h",  "j", "k", "l",
-                               ":", "u", "d",  "x", "X",  "O", "o", "bb",
-                               "$", "0", "gg", "G", "zt", "H"};
+vector<string> nor_com_list = {
+    "i", "a", "I", "A",  "h", "j", "k",  "l", ":",  /* "u", "d",*/ "x",
+    "X", "O", "o", "dd", "$", "0", "gg", "G", "zt", "H"};
 
 int input_char(void); //入力された(特殊)文字のキーコードを返す
 void normal_mode(int c);
@@ -209,18 +208,9 @@ void normal_mode(int c) {
         waddch(status_screen, (char)c);
         wrefresh(status_screen);
         nor_com = "";
-    } else if (nor_com == "u") {
-        /*
-        if (line_top < line_max) {
-            wmove(text_screen, 0, 0);
-            text[line_top++] = text_scan();
-            wscrl(text_screen, 1);
-            wmove(text_screen, --cursor_y, cursor_x);
-            wrefresh(text_screen);
-            wscrl(line_screen, 1);
-            wrefresh(line_screen);
-        }
-        */
+    }
+    /*
+    else if (nor_com == "u") {
         if (line_top < line_max) {
             text_save();
             line_top++;
@@ -230,16 +220,7 @@ void normal_mode(int c) {
         }
         nor_com = "";
     } else if (nor_com == "d") {
-        /*
-        if (line_top > 1) {
-            wscrl(text_screen, -1);
-            wmove(text_screen, 0, 0);
-            winsstr(text_screen, text[--line_top].c_str());
-            wmove(text_screen, ++cursor_y, cursor_x);
-            wrefresh(text_screen);
-        }
-        */
-        if (line_top > 1) {
+             if (line_top > 1) {
             text_save();
             line_top--;
             text_output();
@@ -247,7 +228,9 @@ void normal_mode(int c) {
             wrefresh(text_screen);
         }
         nor_com = "";
-    } else if (nor_com == "x") {
+    }
+    */
+    else if (nor_com == "x") {
         if (text_size[now_line()] >= 1) {
             wdelch(text_screen);
             text_size[now_line()]--;
@@ -295,7 +278,7 @@ void normal_mode(int c) {
         wmove(text_screen, cursor_y, cursor_x);
         wrefresh(text_screen);
         nor_com = "";
-    } else if (nor_com == "bb") {
+    } else if (nor_com == "dd") {
         if (line_max > 1 && line_max > line_top) {
             wdeleteln(text_screen);
             for (int i = now_line(); i <= MAX_LINE - 2; i++) {
