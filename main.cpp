@@ -456,6 +456,32 @@ void normal_mode(int c) {
                         wrefresh(text_screen);
                     }
                 } else if (tmp == "G") {
+                    if (line_top <= num &&
+                        line_top + (window_size_y - status_window_height - 1) -
+                                1 >=
+                            num) {
+                        cursor_y = num - line_top;
+                        cursor_x = 0;
+                        wmove(text_screen, cursor_y, cursor_x);
+                        wrefresh(text_screen);
+                    } else if (num < line_top) {
+                        cursor_y = 0;
+                        cursor_x = 0;
+                        text_save();
+                        line_top = num;
+                        text_output();
+                        wmove(text_screen, cursor_y, cursor_x);
+                        wrefresh(text_screen);
+                    } else { //下側の画面外に移動したい行がある
+                        cursor_y = (window_size_y - status_window_height - 1);
+                        cursor_x = 0;
+                        text_save();
+                        line_top = num + 1 -
+                                   (window_size_y - status_window_height - 1);
+                        text_output();
+                        wmove(text_screen, cursor_y, cursor_x);
+                        wrefresh(text_screen);
+                    }
                 } else if (tmp == "d") {
                     break;
                 } else if (tmp == "dd") {
