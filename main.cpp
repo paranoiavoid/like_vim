@@ -435,6 +435,16 @@ void normal_mode(int c) {
                     wmove(text_screen, cursor_y, cursor_x);
                     wrefresh(text_screen);
                 } else if (tmp == "x") {
+                    if (text_size[now_line()] >= 1) {
+                        num = min(num, text_size[now_line()] - cursor_x);
+                        for (int i = 1; i <= num; i++) {
+                            wdelch(text_screen);
+                        }
+                        text_size[now_line()] -= num;
+                        cursor_x = min(cursor_x, text_size[now_line()] - 1);
+                        wmove(text_screen, cursor_y, cursor_x);
+                        wrefresh(text_screen);
+                    }
                 } else if (tmp == "X") {
                 } else if (tmp == "G") {
                 } else if (tmp == "d") {
