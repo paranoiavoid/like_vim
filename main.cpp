@@ -377,6 +377,9 @@ void normal_mode(int c) {
                     wmove(text_screen, cursor_y, cursor_x);
                     wrefresh(text_screen);
                 } else if (tmp == "l") {
+                    cursor_x = min(text_size[now_line()]-1, cursor_x + num);
+                    wmove(text_screen, cursor_y, cursor_x);
+                    wrefresh(text_screen);
                 } else if (tmp == "x") {
                 } else if (tmp == "X") {
                 } else if (tmp == "G") {
