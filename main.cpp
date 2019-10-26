@@ -1,5 +1,4 @@
 /*
-数字とコマンドが一体になった時のバグが取れない(nor_comのサイズが0になる)
 カーソルが一時的に２箇所に現れるバグがある
 bbやx,Xなどで文字を削除コピーしたときにペーストできる様に配列に保存する
 line_outputのlimの範囲がずれている可能性がある
@@ -371,13 +370,43 @@ void normal_mode(int c) {
                 // string tmp = nor_com.substr(1, 1);
                 string tmp = nor_com.substr(i);
                 if (tmp == "j") {
+                    if (now_line() < line_max) {
+                        if (now_line() + num > line_max) {
+                            num = line_max - now_line();
+                        }
+                        if (cursor_y + (num - 1) <
+                            (window_size_y - status_window_height - 1) - 1) {
+                            if (text_size[now_line() + num] <= cursor_x) {
+                                cursor_x =
+                                    max(text_size[now_line() + num] - 1, 0);
+                            }
+                            cursor_y += num;
+                            wmove(text_screen, cursor_y, cursor_x);
+                            wrefresh(text_screen);
+                        } else {
+                            if (text_size[now_line() + num] <= cursor_x) {
+                                cursor_x =
+                                    max(text_size[now_line() + num] - 1, 0);
+                            }
+                            text_save();
+                            line_top +=
+                                num -
+                                ((window_size_y - status_window_height - 1) -
+                                 (cursor_y + 1));
+                            text_output();
+                            cursor_y =
+                                (window_size_y - status_window_height - 1) - 1;
+                            wmove(text_screen, cursor_y, cursor_x);
+                            wrefresh(text_screen);
+                        }
+                    }
                 } else if (tmp == "k") {
                 } else if (tmp == "h") {
                     cursor_x = max(cursor_x - num, 0);
                     wmove(text_screen, cursor_y, cursor_x);
                     wrefresh(text_screen);
                 } else if (tmp == "l") {
-                    cursor_x = min(text_size[now_line()]-1, cursor_x + num);
+                    cursor_x = min(text_size[now_line()] - 1, cursor_x + num);
                     wmove(text_screen, cursor_y, cursor_x);
                     wrefresh(text_screen);
                 } else if (tmp == "x") {
