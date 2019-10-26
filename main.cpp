@@ -401,6 +401,31 @@ void normal_mode(int c) {
                         }
                     }
                 } else if (tmp == "k") {
+                    if (now_line() > 1) {
+                        if (now_line() - num <= 0) {
+                            num = now_line() - 1;
+                        }
+                        if (cursor_y - num >= 0) {
+                            if (text_size[now_line() - num] <= cursor_x) {
+                                cursor_x =
+                                    max(text_size[now_line() - num] - 1, 0);
+                            }
+                            cursor_y = max(cursor_y - num, 0);
+                            wmove(text_screen, cursor_y, cursor_x);
+                            wrefresh(text_screen);
+                        } else {
+                            if (text_size[now_line() - num] <= cursor_x) {
+                                cursor_x =
+                                    max(text_size[now_line() - num] - 1, 0);
+                            }
+                            text_save();
+                            line_top -= num - (cursor_y);
+                            text_output();
+                            cursor_y = 0;
+                            wmove(text_screen, cursor_y, cursor_x);
+                            wrefresh(text_screen);
+                        }
+                    }
                 } else if (tmp == "h") {
                     cursor_x = max(cursor_x - num, 0);
                     wmove(text_screen, cursor_y, cursor_x);
