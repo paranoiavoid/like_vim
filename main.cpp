@@ -446,6 +446,15 @@ void normal_mode(int c) {
                         wrefresh(text_screen);
                     }
                 } else if (tmp == "X") {
+                    if (cursor_x > 0) {
+                        num = min(num, cursor_x);
+                        for (int i = 1; i <= num; i++) {
+                            wmove(text_screen, cursor_y, --cursor_x);
+                            wdelch(text_screen);
+                        }
+                        text_size[now_line()] -= num;
+                        wrefresh(text_screen);
+                    }
                 } else if (tmp == "G") {
                 } else if (tmp == "d") {
                     break;
