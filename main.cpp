@@ -1,5 +1,6 @@
 /*
-カーソルが一時的に２箇所に現れるバグがある 
+数字とコマンドが一体になった時のバグが取れない(nor_comのサイズが0になる)
+カーソルが一時的に２箇所に現れるバグがある
 bbやx,Xなどで文字を削除コピーしたときにペーストできる様に配列に保存する
 line_outputのlimの範囲がずれている可能性がある
 右端まで文字が表示されるとそれ以降入力しても文字が消えるのを解消する
@@ -347,18 +348,47 @@ void normal_mode(int c) {
         nor_com = "";
     } else if (nor_com == "M") {
         cursor_y = min((window_size_y - status_window_height - 1) - 1,
-                       line_max - line_top)/2;
+                       line_max - line_top) /
+                   2;
         cursor_x = 0;
         wmove(text_screen, cursor_y, cursor_x);
         wrefresh(text_screen);
         nor_com = "";
-    }else if (nor_com == "L") {
+    } else if (nor_com == "L") {
         cursor_y = min((window_size_y - status_window_height - 1) - 1,
                        line_max - line_top);
         cursor_x = 0;
         wmove(text_screen, cursor_y, cursor_x);
         wrefresh(text_screen);
         nor_com = "";
+    } else if (nor_com[0] >= '1' && nor_com[0] <= '9') {
+
+        for (int i = 0; i < nor_com.size(); i++) {
+            if (nor_com[i] >= '0' && nor_com[i] <= '9') {
+                continue;
+            } else {
+                int num = stoi(nor_com.substr(0, i));
+                // string tmp = nor_com.substr(1, 1);
+                string tmp = nor_com.substr(i);
+                if (tmp == "j") {
+                } else if (tmp == "k") {
+                } else if (tmp == "h") {
+                    cursor_x = max(cursor_x - num, 0);
+                    wmove(text_screen, cursor_y, cursor_x);
+                    wrefresh(text_screen);
+                } else if (tmp == "l") {
+                } else if (tmp == "x") {
+                } else if (tmp == "X") {
+                } else if (tmp == "G") {
+                } else if (tmp == "d") {
+                    break;
+                } else if (tmp == "dd") {
+                }
+
+                nor_com = "";
+                break;
+            }
+        }
     }
 }
 void insert_mode(int c) {
@@ -619,10 +649,32 @@ bool normal_command_check(void) {
                 break;
             }
             if (j == nor_com.size() - 1) {
-                flag = true;
+                return true;
             }
         }
-        if (flag == true) {
+    }
+
+    /*この段階で0のみの入力が弾かれているはず*/
+    flag = true;
+    for (int i = 0; i < nor_com.size(); i++) {
+        if (nor_com[i] >= '0' && nor_com[i] <= '9') {
+            continue;
+        } else {
+            string tmp = nor_com.substr(i);
+            if (tmp == "j") {
+            } else if (tmp == "k") {
+            } else if (tmp == "h") {
+            } else if (tmp == "l") {
+            } else if (tmp == "x") {
+            } else if (tmp == "X") {
+            } else if (tmp == "G") {
+            } else if (tmp == "d") {
+                break;
+            } else if (tmp == "dd") {
+            } else {
+                flag = false;
+            }
+
             break;
         }
     }
