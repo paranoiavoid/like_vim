@@ -64,7 +64,7 @@ vector<string> nor_com_list = {
     "i",  "a",  "I",  "A",  "h",  "j", "k",  "l", ":", /* "u", "d",*/ "x",
     "X",  "O",  "o",  "dd", "d$", "D", "d0", "$", "0", "^",
     "gg", "G",  "zt", "zz", "zb", "H", "M",  "L", "p", "P",
-    "yy", "yl", "r"};
+    "yy", "y$", "y0", "yl", "r"};
 
 int input_char(void); //入力された(特殊)文字のキーコードを返す
 void normal_mode(int c);
@@ -515,6 +515,23 @@ void normal_mode(int c) {
         text_copy_func(0, now_line(), text_size[now_line()] - 1, now_line(),
                        LINE);
         wrefresh(text_screen);
+        nor_com = "";
+    } else if (nor_com == "y$") {
+        if (text_size[now_line()] >= 1) {
+            text_copy_func(cursor_x, now_line(), text_size[now_line()] - 1,
+                           now_line(), BLOCK);
+            cursor_x = min(cursor_x, text_size[now_line()] - 1);
+            wmove(text_screen, cursor_y, cursor_x);
+            wrefresh(text_screen);
+        }
+        nor_com = "";
+    } else if (nor_com == "y0") {
+        if (cursor_x > 0) {
+            text_copy_func(0, now_line(), cursor_x - 1, now_line(), BLOCK);
+            cursor_x = 0;
+            wmove(text_screen, cursor_y, cursor_x);
+            wrefresh(text_screen);
+        }
         nor_com = "";
     } else if (nor_com == "yl") {
         if (text_size[now_line()] >= 1) {
