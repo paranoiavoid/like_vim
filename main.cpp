@@ -557,9 +557,26 @@ void normal_mode(int c) {
                     if (line_max <= 0) {
                         line_max = 1;
                     }
-                    if(cursor_y==0&&line_top>line_max){
-                        line_top=max(line_top-1,1);
+                    if (cursor_y == 0 && line_top > line_max) {
+                        line_top = max(line_top - 1, 1);
                     }
+                    text_output();
+                    wmove(text_screen, min(cursor_y, line_max - line_top), 0);
+                    wrefresh(text_screen);
+                } else if (tmp == "y") {
+                    break;
+                } else if (tmp == "yy") {
+
+                    num--; //コピーしたい行数-1の値にする
+                    if (now_line() + num >= line_max) {
+                        num = line_max - now_line();
+                    }
+                    text_save();
+
+                    text_copy_func(0, now_line(),
+                                   window_size_x - line_window_width,
+                                   now_line() + num, LINE);
+                    // wdeleteln(text_screen);
                     text_output();
                     wmove(text_screen, min(cursor_y, line_max - line_top), 0);
                     wrefresh(text_screen);
@@ -851,6 +868,9 @@ bool normal_command_check(void) {
             } else if (tmp == "d") {
                 break;
             } else if (tmp == "dd") {
+            } else if (tmp == "y") {
+                break;
+            } else if (tmp == "yy") {
             } else {
                 flag = false;
             }
