@@ -64,10 +64,10 @@ COPY_MODE cpmode = NO; //今のコピーされたテキストのモード
 
 //ノーマルモードのコマンドをリスト化
 vector<string> nor_com_list = {
-    "i",  "a",  "I",  "A",  "h",  "j",  "k",  "l", ":", /* "u", "d",*/ "x",
-    "X",  "O",  "o",  "dd", "d$", "D",  "d0", "$", "0", "^",
-    "gg", "G",  "zt", "zz", "zb", "H",  "M",  "L", "p", "P",
-    "yy", "y$", "y0", "yl", "r",  "ZZ", "ZQ"};
+    "i",  "a",  "I",  "A",  "h",  "j", "k",  "l",  ":", /* "u", "d",*/ "x",
+    "X",  "O",  "o",  "dd", "d$", "D", "d0", "$",  "0", "^",
+    "gg", "G",  "zt", "zz", "zb", "H", "M",  "L",  "p", "P",
+    "yy", "y$", "Y",  "y0", "yl", "C", "r",  "ZZ", "ZQ"};
 
 int input_char(void); //入力された(特殊)文字のキーコードを返す
 void normal_mode(int c);
@@ -528,6 +528,12 @@ void normal_mode(int c) {
             wrefresh(text_screen);
         }
         nor_com = "";
+    } else if (nor_com == "Y") {
+        text_save();
+        text_copy_func(0, now_line(), text_size[now_line()] - 1, now_line(),
+                       LINE);
+        wrefresh(text_screen);
+        nor_com = "";
     } else if (nor_com == "y0") {
         if (cursor_x > 0) {
             text_copy_func(0, now_line(), cursor_x - 1, now_line(), BLOCK);
@@ -543,6 +549,21 @@ void normal_mode(int c) {
             wmove(text_screen, cursor_y, cursor_x);
             wrefresh(text_screen);
         }
+        nor_com = "";
+    } else if (nor_com == "C") {
+        if (text_size[now_line()] >= 1) {
+            text_copy_func(cursor_x, now_line(), text_size[now_line()] - 1,
+                           now_line(), BLOCK);
+            for (int i = 1; i <= text_size[now_line()] - cursor_x; i++) {
+                wdelch(text_screen);
+            }
+            text_size[now_line()] -= text_size[now_line()] - cursor_x;
+            cursor_x = min(cursor_x, text_size[now_line()] - 1);
+            cursor_x++;
+            wmove(text_screen, cursor_y, cursor_x);
+            wrefresh(text_screen);
+        }
+        mode = INS;
         nor_com = "";
     } else if (nor_com == "r") {
         mode = REP;
