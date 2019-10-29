@@ -1,4 +1,5 @@
 /*
+テキストのコピーする関数を実装する
 カーソルが一時的に２箇所に現れるバグがある
 bbやx,Xなどで文字を削除コピーしたときにペーストできる様に配列に保存する
 line_outputのlimの範囲がずれている可能性がある
@@ -29,6 +30,13 @@ enum MODE { //現在のモードの状態
     COM,    //コマンドラインモード
 };
 
+enum COPY_MODE { //コピーの種類分け
+    NORMAL,
+    V_NOR,
+    V_LINE,
+    V_BLOCK,
+};
+
 int window_size_x; //画面の横幅
 int window_size_y; //画面の縦幅
 //カーソルの座標はインサートモード以外では直接は動かさない
@@ -43,11 +51,14 @@ int line_max = 1;                  //行が存在する最大の行番号
 vector<string> text(MAX_LINE, ""); //テキストを保存しておく二次元文字配列
 vector<int> text_size(MAX_LINE, 0); //各行のテキストの文字数を管理
 string nor_com; //ノーマルモードのコマンドを格納
+vector<string> text_copy(MAX_LINE,
+                         ""); //コピーされた文字列を保存す二次元文字配列
+
 //ノーマルモードのコマンドをリスト化
 vector<string> nor_com_list = {
     "i", "a", "I", "A",  "h", "j", "k",  "l", ":",  /* "u", "d",*/ "x",
     "X", "O", "o", "dd", "$", "0", "gg", "G", "zt", "H",
-    "M", "L"};
+    "M", "L", "p"};
 
 int input_char(void); //入力された(特殊)文字のキーコードを返す
 void normal_mode(int c);
@@ -62,8 +73,17 @@ string text_scan(void);
 bool normal_command_check(
     void); //ノーマルモードのコマンドが現時点で存在する可能性があるか判定
 int now_line(void); //今何行目のテキストにカーソルが乗っているか判定
-void text_save(void);   //テキスト情報を保存する
-void text_output(void); //画面移動後のテキストを表示する
+void text_save(void);       //テキスト情報を保存する
+void text_output(void);     //画面移動後のテキストを表示する
+void text_copy_reset(void); //コピーされた文字列をリセットする
+void text_copy_func(
+    int xf, int yf, int xl, int yl,
+    COPY_MODE mode); //テキストをコピーする関数
+                     // xはカーソルの位置,yは絶対的な行番号で指定
+void text_paste_func(
+    int xf, int yf, int y_line,
+    COPY_MODE mode); //テキストをペーストする関数
+                     // xはカーソルの位置,yは絶対的な行番号で指定
 
 WINDOW *line_screen;
 WINDOW *status_screen;
@@ -282,6 +302,9 @@ void normal_mode(int c) {
         nor_com = "";
     } else if (nor_com == "dd") {
         if (line_max > 1 && line_max > line_top) {
+            text_save();
+            text_copy_func(0, now_line(), text_size[now_line()] - 1, now_line(),
+                           NORMAL);
             wdeleteln(text_screen);
             for (int i = now_line(); i <= MAX_LINE - 2; i++) {
                 text_size[i] = text_size[i + 1];
@@ -290,6 +313,9 @@ void normal_mode(int c) {
             wmove(text_screen, min(cursor_y, line_max - line_top), 0);
             wrefresh(text_screen);
         } else if (line_max == 1) {
+            text_save();
+            text_copy_func(0, now_line(), text_size[now_line()] - 1, now_line(),
+                           NORMAL);
             text_size[line_max] = 0;
             wdeleteln(text_screen);
             wmove(text_screen, min(cursor_y, line_max - line_top), 0);
@@ -358,6 +384,13 @@ void normal_mode(int c) {
                        line_max - line_top);
         cursor_x = 0;
         wmove(text_screen, cursor_y, cursor_x);
+        wrefresh(text_screen);
+        nor_com = "";
+    } else if (nor_com == "p") {
+        text_save();
+        text_paste_func(0, now_line() + 1, 1, NORMAL);
+        cursor_x = 0;
+        wmove(text_screen, ++cursor_y, cursor_x);
         wrefresh(text_screen);
         nor_com = "";
     } else if (nor_com[0] >= '1' && nor_com[0] <= '9') {
@@ -817,4 +850,42 @@ void text_output(void) {
 
     wmove(text_screen, cursor_y, cursor_x);
     wrefresh(text_screen);
+}
+
+void text_copy_reset(void) {
+    for (int i = 0; i < MAX_LINE; i++) {
+        text_copy[i] = "";
+    }
+}
+
+void text_copy_func(int xf, int yf, int xl, int yl, COPY_MODE mode) {
+
+    text_copy_reset();
+
+    wrefresh(text_screen);
+
+    if (mode == NORMAL) { //行コピー
+
+        for (int y = yf; y <= yl; y++) {
+            text_copy[y - yf + 1] =
+                text[y].substr(xf, min(xl - xf + 1, text_size[y] - xf + 1));
+        }
+    }
+}
+
+void text_paste_func(int xf, int yf, int y_line, COPY_MODE mode) {
+    wrefresh(text_screen);
+
+    if (mode == NORMAL) {
+        for (int y = MAX_LINE - 1; y >= yf + y_line; y--) {
+            text[y] = text[y - y_line];
+            text_size[y] = text_size[y - y_line];
+        }
+        for (int y = 1; y <= y_line; y++) {
+            text[yf + y - 1] = text_copy[y];
+            text_size[yf + y - 1] = text_copy[y].size();
+        }
+        line_max += y_line;
+    }
+    text_output();
 }
