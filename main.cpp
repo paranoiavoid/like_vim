@@ -501,6 +501,8 @@ void normal_mode(int c) {
                 } else if (tmp == "x") {
                     if (text_size[now_line()] >= 1) {
                         num = min(num, text_size[now_line()] - cursor_x);
+                        text_copy_func(cursor_x, now_line(),
+                                       cursor_x + (num - 1), now_line(), BLOCK);
                         for (int i = 1; i <= num; i++) {
                             wdelch(text_screen);
                         }
@@ -512,6 +514,8 @@ void normal_mode(int c) {
                 } else if (tmp == "X") {
                     if (cursor_x > 0) {
                         num = min(num, cursor_x);
+                        text_copy_func(cursor_x - 1 - (num - 1), now_line(),
+                                       cursor_x - 1, now_line(), BLOCK);
                         for (int i = 1; i <= num; i++) {
                             wmove(text_screen, cursor_y, --cursor_x);
                             wdelch(text_screen);
