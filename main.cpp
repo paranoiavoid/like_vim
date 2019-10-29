@@ -64,10 +64,10 @@ COPY_MODE cpmode = NO; //今のコピーされたテキストのモード
 
 //ノーマルモードのコマンドをリスト化
 vector<string> nor_com_list = {
-    "i",  "a",  "I",  "A",  "h",  "j", "k",  "l", ":", /* "u", "d",*/ "x",
-    "X",  "O",  "o",  "dd", "d$", "D", "d0", "$", "0", "^",
-    "gg", "G",  "zt", "zz", "zb", "H", "M",  "L", "p", "P",
-    "yy", "y$", "y0", "yl", "r"};
+    "i",  "a",  "I",  "A",  "h",  "j",  "k",  "l", ":", /* "u", "d",*/ "x",
+    "X",  "O",  "o",  "dd", "d$", "D",  "d0", "$", "0", "^",
+    "gg", "G",  "zt", "zz", "zb", "H",  "M",  "L", "p", "P",
+    "yy", "y$", "y0", "yl", "r",  "ZZ", "ZQ"};
 
 int input_char(void); //入力された(特殊)文字のキーコードを返す
 void normal_mode(int c);
@@ -546,6 +546,12 @@ void normal_mode(int c) {
         nor_com = "";
     } else if (nor_com == "r") {
         mode = REP;
+    } else if (nor_com == "ZZ") {
+        endwin();
+        exit(0);
+    } else if (nor_com == "ZQ") {
+        endwin();
+        exit(0);
     } else if (nor_com[0] >= '1' && nor_com[0] <= '9') {
 
         for (int i = 0; i < nor_com.size(); i++) {
