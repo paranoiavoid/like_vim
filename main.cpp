@@ -58,7 +58,7 @@ vector<string> text_copy(MAX_LINE,
 vector<string> nor_com_list = {
     "i", "a", "I", "A",  "h", "j", "k",  "l", ":",  /* "u", "d",*/ "x",
     "X", "O", "o", "dd", "$", "0", "gg", "G", "zt", "H",
-    "M", "L", "p", "P"};
+    "M", "L", "p", "P",  "yy"};
 
 int input_char(void); //入力された(特殊)文字のキーコードを返す
 void normal_mode(int c);
@@ -398,6 +398,12 @@ void normal_mode(int c) {
         text_paste_func(0, now_line(), 1, NORMAL);
         cursor_x = 0;
         wmove(text_screen, cursor_y, cursor_x);
+        wrefresh(text_screen);
+        nor_com = "";
+    } else if (nor_com == "yy") {
+        text_save();
+        text_copy_func(0, now_line(), text_size[now_line()] - 1, now_line(),
+                       NORMAL);
         wrefresh(text_screen);
         nor_com = "";
     } else if (nor_com[0] >= '1' && nor_com[0] <= '9') {
