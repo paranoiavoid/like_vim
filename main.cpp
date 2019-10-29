@@ -59,9 +59,9 @@ COPY_MODE cpmode = NO; //今のコピーされたテキストのモード
 
 //ノーマルモードのコマンドをリスト化
 vector<string> nor_com_list = {
-    "i", "a", "I", "A",  "h", "j", "k", "l",  ":", /* "u", "d",*/ "x",
-    "X", "O", "o", "dd", "$", "0", "^", "gg", "G", "zt",
-    "H", "M", "L", "p",  "P", "yy"};
+    "i",  "a", "I", "A",  "h", "j", "k", "l",  ":", /* "u", "d",*/ "x",
+    "X",  "O", "o", "dd", "$", "0", "^", "gg", "G", "zt",
+    "zb", "H", "M", "L",  "p", "P", "yy"};
 
 int input_char(void); //入力された(特殊)文字のキーコードを返す
 void normal_mode(int c);
@@ -379,6 +379,20 @@ void normal_mode(int c) {
         line_top = now_line();
         text_output();
         cursor_y = 0;
+        wmove(text_screen, cursor_y, cursor_x);
+        wrefresh(text_screen);
+        nor_com = "";
+    } else if (nor_com == "zb") {
+        text_save();
+        if (now_line() >= (window_size_y - status_window_height - 1)) {
+            line_top -=
+                (window_size_y - status_window_height - 1) - (cursor_y + 1);
+            cursor_y = (window_size_y - status_window_height - 1) - 1;
+        } else {
+            cursor_y = now_line() - 1;
+            line_top = 1;
+        }
+        text_output();
         wmove(text_screen, cursor_y, cursor_x);
         wrefresh(text_screen);
         nor_com = "";
