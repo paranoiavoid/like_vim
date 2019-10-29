@@ -31,7 +31,9 @@ enum MODE { //現在のモードの状態
 };
 
 enum COPY_MODE { //コピーの種類分け
-    NORMAL,
+    NO,
+    LINE,
+    BLOCK,
     V_NOR,
     V_LINE,
     V_BLOCK,
@@ -53,6 +55,8 @@ vector<int> text_size(MAX_LINE, 0); //各行のテキストの文字数を管理
 string nor_com; //ノーマルモードのコマンドを格納
 vector<string> text_copy(MAX_LINE,
                          ""); //コピーされた文字列を保存す二次元文字配列
+int copy_line = 0;     //テキストがコピーされている行数
+COPY_MODE cpmode = NO; //今のコピーされたテキストのモード
 
 //ノーマルモードのコマンドをリスト化
 vector<string> nor_com_list = {
@@ -304,7 +308,7 @@ void normal_mode(int c) {
         if (line_max > 1 && line_max > line_top) {
             text_save();
             text_copy_func(0, now_line(), text_size[now_line()] - 1, now_line(),
-                           NORMAL);
+                           LINE);
             wdeleteln(text_screen);
             for (int i = now_line(); i <= MAX_LINE - 2; i++) {
                 text_size[i] = text_size[i + 1];
@@ -315,7 +319,7 @@ void normal_mode(int c) {
         } else if (line_max == 1) {
             text_save();
             text_copy_func(0, now_line(), text_size[now_line()] - 1, now_line(),
-                           NORMAL);
+                           LINE);
             text_size[line_max] = 0;
             wdeleteln(text_screen);
             wmove(text_screen, min(cursor_y, line_max - line_top), 0);
@@ -388,14 +392,14 @@ void normal_mode(int c) {
         nor_com = "";
     } else if (nor_com == "p") {
         text_save();
-        text_paste_func(0, now_line() + 1, 1, NORMAL);
+        text_paste_func(0, now_line() + 1, copy_line, cpmode);
         cursor_x = 0;
         wmove(text_screen, ++cursor_y, cursor_x);
         wrefresh(text_screen);
         nor_com = "";
     } else if (nor_com == "P") {
         text_save();
-        text_paste_func(0, now_line(), 1, NORMAL);
+        text_paste_func(0, now_line(), copy_line, cpmode);
         cursor_x = 0;
         wmove(text_screen, cursor_y, cursor_x);
         wrefresh(text_screen);
@@ -403,7 +407,7 @@ void normal_mode(int c) {
     } else if (nor_com == "yy") {
         text_save();
         text_copy_func(0, now_line(), text_size[now_line()] - 1, now_line(),
-                       NORMAL);
+                       LINE);
         wrefresh(text_screen);
         nor_com = "";
     } else if (nor_com[0] >= '1' && nor_com[0] <= '9') {
@@ -531,6 +535,34 @@ void normal_mode(int c) {
                 } else if (tmp == "d") {
                     break;
                 } else if (tmp == "dd") {
+                    num--; //コピーしたい行数-1の値にする
+                    if (now_line() + num >= line_max) {
+                        num = line_max - now_line();
+                    }
+                    text_save();
+
+                    text_copy_func(0, now_line(),
+                                   window_size_x - line_window_width,
+                                   now_line() + num, LINE);
+                    // wdeleteln(text_screen);
+                    for (int i = now_line(); i <= MAX_LINE - (num + 1) - 1;
+                         i++) {
+                        text[i] = text[i + (num + 1)];
+                    }
+                    for (int i = now_line(); i <= MAX_LINE - (num + 1) - 1;
+                         i++) {
+                        text_size[i] = text_size[i + (num + 1)];
+                    }
+                    line_max -= (num + 1);
+                    if (line_max <= 0) {
+                        line_max = 1;
+                    }
+                    if(cursor_y==0&&line_top>line_max){
+                        line_top=max(line_top-1,1);
+                    }
+                    text_output();
+                    wmove(text_screen, min(cursor_y, line_max - line_top), 0);
+                    wrefresh(text_screen);
                 }
 
                 nor_com = "";
@@ -876,8 +908,10 @@ void text_copy_func(int xf, int yf, int xl, int yl, COPY_MODE mode) {
     text_copy_reset();
 
     wrefresh(text_screen);
+    copy_line = (yl - yf) + 1;
+    cpmode = mode;
 
-    if (mode == NORMAL) { //行コピー
+    if (mode == LINE) { //行コピー
 
         for (int y = yf; y <= yl; y++) {
             text_copy[y - yf + 1] =
@@ -889,7 +923,7 @@ void text_copy_func(int xf, int yf, int xl, int yl, COPY_MODE mode) {
 void text_paste_func(int xf, int yf, int y_line, COPY_MODE mode) {
     wrefresh(text_screen);
 
-    if (mode == NORMAL) {
+    if (mode == LINE) {
         for (int y = MAX_LINE - 1; y >= yf + y_line; y--) {
             text[y] = text[y - y_line];
             text_size[y] = text_size[y - y_line];
