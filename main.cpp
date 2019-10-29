@@ -1,6 +1,6 @@
 /*
+text_scanがバグっている可能性がある(仕様変更のため)
 カーソルが一時的に２箇所に現れるバグがある
-bbやx,Xなどで文字を削除コピーしたときにペーストできる様に配列に保存する
 line_outputのlimの範囲がずれている可能性がある
 右端まで文字が表示されるとそれ以降入力しても文字が消えるのを解消する
 DelとBackspaceのキーコードが異なる(エラーの原因になる可能性)
@@ -59,9 +59,9 @@ COPY_MODE cpmode = NO; //今のコピーされたテキストのモード
 
 //ノーマルモードのコマンドをリスト化
 vector<string> nor_com_list = {
-    "i", "a", "I", "A",  "h", "j", "k",  "l", ":",  /* "u", "d",*/ "x",
-    "X", "O", "o", "dd", "$", "0", "gg", "G", "zt", "H",
-    "M", "L", "p", "P",  "yy"};
+    "i", "a", "I", "A",  "h", "j", "k", "l",  ":", /* "u", "d",*/ "x",
+    "X", "O", "o", "dd", "$", "0", "^", "gg", "G", "zt",
+    "H", "M", "L", "p",  "P", "yy"};
 
 int input_char(void); //入力された(特殊)文字のキーコードを返す
 void normal_mode(int c);
@@ -335,6 +335,17 @@ void normal_mode(int c) {
         nor_com = "";
     } else if (nor_com == "0") {
         cursor_x = 0;
+        wmove(text_screen, cursor_y, cursor_x);
+        wrefresh(text_screen);
+        nor_com = "";
+    } else if (nor_com == "^") {
+        cursor_x = 0;
+        for (int x = 0; x <= text_size[now_line()] - 1; x++) {
+            if (text[now_line()][x] != ' ') {
+                cursor_x = x;
+                break;
+            }
+        }
         wmove(text_screen, cursor_y, cursor_x);
         wrefresh(text_screen);
         nor_com = "";
@@ -845,8 +856,12 @@ string text_scan(void) {
     }
 
     string str = tmp_str; // char*型をstring型へ変換
+
+    /*
     str.erase(remove(str.begin(), str.end(), ' '),
               str.end()); // string型に写した文字列から空白を全て削除
+              */
+    str[text[now_line()].size()] = '\0';
 
     free(tmp_str);
 
