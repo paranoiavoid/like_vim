@@ -1060,13 +1060,18 @@ void text_paste_func(int xf, int yf, int y_line, COPY_MODE mode) {
         }
         line_max += y_line;
     } else if (mode == BLOCK) {
-
         int x_column = text_copy[1].size();
-        for (int x = text_size[yf] - 1; x >= xf; x--) {
-            text[yf][x + x_column] = text[yf][x];
-        }
-        for (int x = 0; x < x_column; x++) {
-            text[yf][xf + x] = text_copy[1][x];
+        if (text_size[now_line()] >= 1) {
+            for (int x = text_size[yf] - 1; x >= xf; x--) {
+                text[yf][x + x_column] = text[yf][x];
+            }
+            for (int x = 0; x < x_column; x++) {
+                text[yf][xf + x] = text_copy[1][x];
+            }
+        } else {
+            for (int x = 0; x < x_column; x++) {
+                text[yf][x] = text_copy[1][x];
+            }
         }
         text_size[yf] += x_column;
     }
