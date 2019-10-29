@@ -1,4 +1,5 @@
 /*
+pでペーストするときに文字が0でも一つ右から始まってしまう
 インサートモードでカーソルが画面の一番下まできたときにバグる
 text_scanがバグっている(今のところ解消)
 カーソルが一時的に２箇所に現れるバグがある
@@ -28,6 +29,7 @@ enum MODE { //現在のモードの状態
     INS,    //挿入モード
     VIS,    //ビジュアルモード
     COM,    //コマンドラインモード
+    REP,    //置換モード
 };
 
 enum COPY_MODE { //コピーの種類分け
@@ -62,7 +64,7 @@ COPY_MODE cpmode = NO; //今のコピーされたテキストのモード
 vector<string> nor_com_list = {
     "i",  "a",  "I",  "A",  "h",  "j", "k", "l", ":",  /* "u", "d",*/ "x",
     "X",  "O",  "o",  "dd", "d$", "$", "0", "^", "gg", "G",
-    "zt", "zz", "zb", "H",  "M",  "L", "p", "P", "yy"};
+    "zt", "zz", "zb", "H",  "M",  "L", "p", "P", "yy", "r"};
 
 int input_char(void); //入力された(特殊)文字のキーコードを返す
 void normal_mode(int c);
@@ -88,6 +90,7 @@ void text_paste_func(
     int xf, int yf, int y_line,
     COPY_MODE mode); //テキストをペーストする関数
                      // xはカーソルの位置,yは絶対的な行番号で指定
+void replace_mode(int c);
 
 WINDOW *line_screen;
 WINDOW *status_screen;
@@ -488,6 +491,8 @@ void normal_mode(int c) {
                        LINE);
         wrefresh(text_screen);
         nor_com = "";
+    } else if (nor_com == "r") {
+        mode = REP;
     } else if (nor_com[0] >= '1' && nor_com[0] <= '9') {
 
         for (int i = 0; i < nor_com.size(); i++) {
@@ -799,6 +804,8 @@ void input_check(int c) {
 
     } else if (mode == COM) {
         command_mode(c);
+    } else if (mode == REP) {
+        replace_mode(c);
     }
     mode_output();
     line_output();
@@ -880,6 +887,14 @@ void mode_output(void) {
     } else if (mode == COM) {
         waddstr(mode_screen, "COM");
         wrefresh(mode_screen);
+    } else if (mode == REP) {
+        if (nor_com == "r") {
+            werase(status_screen);
+            wmove(status_screen, 1, window_size_x - 15);
+            waddstr(status_screen, nor_com.c_str());
+            wmove(status_screen, 0, 0);
+            wrefresh(status_screen);
+        }
     }
     getyx(text_screen, cursor_y, cursor_x);
     wmove(text_screen, cursor_y, cursor_x);
@@ -1056,4 +1071,61 @@ void text_paste_func(int xf, int yf, int y_line, COPY_MODE mode) {
         text_size[yf] += x_column;
     }
     text_output();
+}
+void replace_mode(int c) {
+    if (nor_com == "r") {
+
+        if (c == KEY_ESC) {
+        } else if (c == KEY_DEL) {
+        } else if (c == KEY_BACKSPACE) {
+        } else if (c == KEY_ENT) {
+            int tmp; //改行させる文字数
+            tmp = text_size[now_line()] - (cursor_x + 1);
+            for (int i = MAX_LINE - 2; i >= now_line() + 1; i--) {
+                text_size[i + 1] = text_size[i];
+            }
+            text_size[now_line() + 1] = tmp;
+            text_size[now_line()] -= tmp + 1;
+
+            int size = tmp + 100;
+            char *str = (char *)malloc(sizeof(char) * size);
+            wdelch(text_screen);
+            winnstr(text_screen, str, tmp);
+            for (int i = 1; i <= tmp; i++) {
+                waddch(text_screen, ' ');
+                wrefresh(text_screen);
+            }
+
+            if (cursor_y >= window_size_y - status_window_height - 2) {
+                text_save();
+                line_top++;
+                line_max++;
+                text_output();
+                wrefresh(text_screen);
+                wmove(text_screen, cursor_y, 0);
+                wrefresh(text_screen);
+                waddstr(text_screen, str);
+                wrefresh(text_screen);
+
+            } else {
+                wmove(text_screen, ++cursor_y, 0);
+                winsdelln(text_screen, 1);
+                line_max++;
+                wrefresh(text_screen);
+                waddstr(text_screen, str);
+                wrefresh(text_screen);
+            }
+
+            free(str);
+        } else {
+            waddch(text_screen, (char)c);
+            wmove(text_screen, cursor_y, cursor_x);
+            wrefresh(text_screen);
+        }
+
+        mode = NOR;
+        nor_com = "";
+        wmove(text_screen, cursor_y, min(cursor_x, text_size[now_line()] - 1));
+        wrefresh(text_screen);
+    }
 }
