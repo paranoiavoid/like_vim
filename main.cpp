@@ -1,4 +1,6 @@
 /*
+カーソルを[数字]G,:[数字]でline_maxより大きい行番号で動かすとcursor_x=0の位置にカーソルが来ない
+lを長押しするとバグる
 インサートモードでカーソルが画面の一番下まできたときにバグる(今のところ解消)
 text_scanがバグっている(今のところ解消)
 カーソルが一時的に２箇所に現れるバグがある
@@ -10,6 +12,7 @@ DelとBackspaceのキーコードが異なる(エラーの原因になる可能�
 #include <algorithm>
 #include <cstring>
 #include <curses.h>
+#include <stdexcept>
 #include <string>
 #include <unistd.h>
 #include <vector>
@@ -643,6 +646,7 @@ void normal_mode(int c) {
                         wrefresh(text_screen);
                     }
                 } else if (tmp == "G") {
+                    num = min(num, line_max);
                     if (line_top <= num &&
                         line_top + (window_size_y - status_window_height - 1) -
                                 1 >=
@@ -889,6 +893,37 @@ string command_scan(void) {
 }
 
 void command_check(string str) {
+    try {
+        int num = stoi(str);
+
+        num = min(num, line_max);
+        if (line_top <= num &&
+            line_top + (window_size_y - status_window_height - 1) - 1 >= num) {
+            cursor_y = num - line_top;
+            cursor_x = 0;
+            wmove(text_screen, cursor_y, cursor_x);
+            wrefresh(text_screen);
+        } else if (num < line_top) {
+            cursor_y = 0;
+            cursor_x = 0;
+            text_save();
+            line_top = num;
+            text_output();
+            wmove(text_screen, cursor_y, cursor_x);
+            wrefresh(text_screen);
+        } else { //下側の画面外に移動したい行がある
+            cursor_y = (window_size_y - status_window_height - 1);
+            cursor_x = 0;
+            text_save();
+            line_top = num + 1 - (window_size_y - status_window_height - 1);
+            text_output();
+            wmove(text_screen, cursor_y, cursor_x);
+            wrefresh(text_screen);
+        }
+    } catch (const std::invalid_argument &e) {
+
+    } catch (const std::out_of_range &e) {
+    }
     if (str == "q") {
         endwin();
         exit(0);
