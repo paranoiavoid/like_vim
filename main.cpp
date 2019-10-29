@@ -1,5 +1,4 @@
 /*
-テキストのコピーする関数を実装する
 カーソルが一時的に２箇所に現れるバグがある
 bbやx,Xなどで文字を削除コピーしたときにペーストできる様に配列に保存する
 line_outputのlimの範囲がずれている可能性がある
@@ -258,6 +257,7 @@ void normal_mode(int c) {
     */
     else if (nor_com == "x") {
         if (text_size[now_line()] >= 1) {
+            text_copy_func(cursor_x, now_line(), cursor_x, now_line(), BLOCK);
             wdelch(text_screen);
             text_size[now_line()]--;
             cursor_x = min(cursor_x, text_size[now_line()] - 1);
@@ -267,6 +267,8 @@ void normal_mode(int c) {
         nor_com = "";
     } else if (nor_com == "X") {
         if (cursor_x > 0) {
+            text_copy_func(cursor_x - 1, now_line(), cursor_x - 1, now_line(),
+                           BLOCK);
             wmove(text_screen, cursor_y, --cursor_x);
             wdelch(text_screen);
             text_size[now_line()]--;
@@ -392,16 +394,28 @@ void normal_mode(int c) {
         nor_com = "";
     } else if (nor_com == "p") {
         text_save();
-        text_paste_func(0, now_line() + 1, copy_line, cpmode);
-        cursor_x = 0;
-        wmove(text_screen, ++cursor_y, cursor_x);
+        if (cpmode == LINE) {
+            text_paste_func(0, now_line() + 1, copy_line, cpmode);
+            cursor_x = 0;
+            wmove(text_screen, ++cursor_y, cursor_x);
+        } else if (cpmode == BLOCK) {
+            text_paste_func(cursor_x + 1, now_line(), 0, cpmode);
+            cursor_x += text_copy[1].size();
+            wmove(text_screen, cursor_y, cursor_x);
+        }
         wrefresh(text_screen);
         nor_com = "";
     } else if (nor_com == "P") {
         text_save();
-        text_paste_func(0, now_line(), copy_line, cpmode);
-        cursor_x = 0;
-        wmove(text_screen, cursor_y, cursor_x);
+        if (cpmode == LINE) {
+            text_paste_func(0, now_line(), copy_line, cpmode);
+            cursor_x = 0;
+            wmove(text_screen, cursor_y, cursor_x);
+        } else if (cpmode == BLOCK) {
+            text_paste_func(cursor_x, now_line(), 0, cpmode);
+            cursor_x += text_copy[1].size() - 1;
+            wmove(text_screen, cursor_y, cursor_x);
+        }
         wrefresh(text_screen);
         nor_com = "";
     } else if (nor_com == "yy") {
@@ -937,6 +951,11 @@ void text_copy_func(int xf, int yf, int xl, int yl, COPY_MODE mode) {
             text_copy[y - yf + 1] =
                 text[y].substr(xf, min(xl - xf + 1, text_size[y] - xf + 1));
         }
+    } else if (mode == BLOCK) {
+        for (int y = yf; y <= yl; y++) {
+            text_copy[y - yf + 1] =
+                text[y].substr(xf, min(xl - xf + 1, text_size[y] - xf + 1));
+        }
     }
 }
 
@@ -953,6 +972,16 @@ void text_paste_func(int xf, int yf, int y_line, COPY_MODE mode) {
             text_size[yf + y - 1] = text_copy[y].size();
         }
         line_max += y_line;
+    } else if (mode == BLOCK) {
+
+        int x_column = text_copy[1].size();
+        for (int x = text_size[yf] - 1; x >= xf; x--) {
+            text[yf][x + x_column] = text[yf][x];
+        }
+        for (int x = 0; x < x_column; x++) {
+            text[yf][xf + x] = text_copy[1][x];
+        }
+        text_size[yf] += x_column;
     }
     text_output();
 }
