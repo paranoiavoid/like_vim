@@ -1,5 +1,6 @@
 /*
-text_scanがバグっている可能性がある(仕様変更のため)
+インサートモードでカーソルが画面の一番下まできたときにバグる
+text_scanがバグっている(今のところ解消)
 カーソルが一時的に２箇所に現れるバグがある
 line_outputのlimの範囲がずれている可能性がある
 右端まで文字が表示されるとそれ以降入力しても文字が消えるのを解消する
@@ -59,9 +60,9 @@ COPY_MODE cpmode = NO; //今のコピーされたテキストのモード
 
 //ノーマルモードのコマンドをリスト化
 vector<string> nor_com_list = {
-    "i",  "a", "I", "A",  "h", "j", "k", "l",  ":", /* "u", "d",*/ "x",
-    "X",  "O", "o", "dd", "$", "0", "^", "gg", "G", "zt",
-    "zb", "H", "M", "L",  "p", "P", "yy"};
+    "i",  "a",  "I", "A",  "h", "j", "k", "l",  ":", /* "u", "d",*/ "x",
+    "X",  "O",  "o", "dd", "$", "0", "^", "gg", "G", "zt",
+    "zz", "zb", "H", "M",  "L", "p", "P", "yy"};
 
 int input_char(void); //入力された(特殊)文字のキーコードを返す
 void normal_mode(int c);
@@ -382,6 +383,31 @@ void normal_mode(int c) {
         wmove(text_screen, cursor_y, cursor_x);
         wrefresh(text_screen);
         nor_com = "";
+    } else if (nor_com == "zz") {
+        text_save();
+        if (line_top == 1) {
+            if (((window_size_y - status_window_height) / 2) < now_line()) {
+                line_top = now_line() -
+                           ((window_size_y - status_window_height) / 2) + 1;
+                cursor_y = ((window_size_y - status_window_height) / 2) - 1;
+
+            } else {
+            }
+        } else {
+            if (((window_size_y - status_window_height) / 2) < now_line()) {
+                line_top = now_line() -
+                           ((window_size_y - status_window_height) / 2) + 1;
+                cursor_y = ((window_size_y - status_window_height) / 2) - 1;
+
+            } else {
+                cursor_y = now_line() - 1;
+                line_top = 1;
+            }
+        }
+        text_output();
+        wmove(text_screen, cursor_y, cursor_x);
+        wrefresh(text_screen);
+        nor_com = "";
     } else if (nor_com == "zb") {
         text_save();
         if (now_line() >= (window_size_y - status_window_height - 1)) {
@@ -690,16 +716,6 @@ void insert_mode(int c) {
         }
 
         free(str);
-
-        /*
-        wmove(text_screen, ++cursor_y, cursor_x);
-        winsdelln(text_screen, 1);
-        line_max++;
-        wrefresh(text_screen);
-        cursor_x = 0;
-        wmove(text_screen, cursor_y, cursor_x);
-        wrefresh(text_screen);
-        */
     } else {
         winsch(text_screen, (char)c);
         wmove(text_screen, cursor_y, ++cursor_x);
@@ -871,11 +887,21 @@ string text_scan(void) {
 
     string str = tmp_str; // char*型をstring型へ変換
 
-    /*
-    str.erase(remove(str.begin(), str.end(), ' '),
+    //今のところうまく動作する
+    auto itr = str.begin();
+    itr += text[now_line()].size() + 1;
+    //この処理の方を選ぶと空白の後に文字を入力するとバグる
+    str.erase(remove(itr, str.end(), ' '),
               str.end()); // string型に写した文字列から空白を全て削除
-              */
-    str[text[now_line()].size()] = '\0';
+
+    /*
+        //この処理の方を選ぶと空白の後に文字を入力するとバグる
+        str.erase(remove(str.begin(), str.end(), ' '),
+                  str.end()); // string型に写した文字列から空白を全て削除
+                  */
+
+    //この処理の方を選ぶと空白の後に文字を入力してもバグらないが、その他の部分でかなりバグる
+    // str[text[now_line()].size()] = '\0';
 
     free(tmp_str);
 
