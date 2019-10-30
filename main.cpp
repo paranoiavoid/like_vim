@@ -64,10 +64,11 @@ COPY_MODE cpmode = NO; //今のコピーされたテキストのモード
 
 //ノーマルモードのコマンドをリスト化
 vector<string> nor_com_list = {
-    "i",  "a",  "I",  "A",  "h",  "j", "k",  "l", ":",  /* "u", "d",*/ "x",
-    "X",  "O",  "o",  "dd", "d$", "D", "d0", "$", "0",  "^",
-    "gg", "G",  "zt", "zz", "zb", "H", "M",  "L", "p",  "P",
-    "yy", "y$", "Y",  "y0", "yl", "C", "cc", "r", "ZZ", "ZQ"};
+    "i", "a",  "I",  "A",  "h",  "j",  "k",  "l",  ":", /* "u", "d",*/ "x",
+    "X", "O",  "o",  "dd", "d$", "D",  "d0", "dl", "$", "0",
+    "^", "gg", "G",  "zt", "zz", "zb", "H",  "M",  "L", "p",
+    "P", "yy", "y$", "Y",  "y0", "yl", "C",  "cc", "r", "ZZ",
+    "ZQ"};
 
 int input_char(void); //入力された(特殊)文字のキーコードを返す
 void normal_mode(int c);
@@ -373,6 +374,16 @@ void normal_mode(int c) {
             wrefresh(text_screen);
         }
         nor_com = "";
+    } else if (nor_com == "dl") {
+        if (text_size[now_line()] >= 1) {
+            text_copy_func(cursor_x, now_line(), cursor_x, now_line(), BLOCK);
+            wdelch(text_screen);
+            text_size[now_line()]--;
+            cursor_x = min(cursor_x, text_size[now_line()] - 1);
+            wmove(text_screen, cursor_y, cursor_x);
+            wrefresh(text_screen);
+        }
+        nor_com = "";
     } else if (nor_com == "$") {
         cursor_x = text_size[now_line()] - 1;
         wmove(text_screen, cursor_y, cursor_x);
@@ -494,8 +505,16 @@ void normal_mode(int c) {
             cursor_x = 0;
             wmove(text_screen, ++cursor_y, cursor_x);
         } else if (cpmode == BLOCK) {
+            bool flag = false;
+            if (text_size[now_line()] == 0) {
+                flag = true;
+            }
             text_paste_func(cursor_x + 1, now_line(), 0, cpmode);
-            cursor_x += text_copy[1].size();
+            if (flag) {
+                cursor_x = text_copy[1].size() - 1;
+            } else {
+                cursor_x += text_copy[1].size();
+            }
             wmove(text_screen, cursor_y, cursor_x);
         }
         wrefresh(text_screen);
@@ -747,6 +766,19 @@ void normal_mode(int c) {
                     text_output();
                     wmove(text_screen, min(cursor_y, line_max - line_top), 0);
                     wrefresh(text_screen);
+                } else if (tmp == "dl") {
+                    if (text_size[now_line()] >= 1) {
+                        num = min(num, text_size[now_line()] - cursor_x);
+                        text_copy_func(cursor_x, now_line(),
+                                       cursor_x + (num - 1), now_line(), BLOCK);
+                        for (int i = 1; i <= num; i++) {
+                            wdelch(text_screen);
+                        }
+                        text_size[now_line()] -= num;
+                        cursor_x = min(cursor_x, text_size[now_line()] - 1);
+                        wmove(text_screen, cursor_y, cursor_x);
+                        wrefresh(text_screen);
+                    }
                 } else if (tmp == "y") {
                     break;
                 } else if (tmp == "yy") {
@@ -1097,6 +1129,7 @@ bool normal_command_check(void) {
             } else if (tmp == "d") {
                 break;
             } else if (tmp == "dd") {
+            } else if (tmp == "dl") {
             } else if (tmp == "y") {
                 break;
             } else if (tmp == "yy") {
