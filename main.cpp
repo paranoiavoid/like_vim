@@ -796,6 +796,15 @@ void normal_mode(int c) {
                     text_output();
                     wmove(text_screen, min(cursor_y, line_max - line_top), 0);
                     wrefresh(text_screen);
+                } else if (tmp == "yl") {
+                    if (text_size[now_line()] >= 1) {
+                        num = min(num, text_size[now_line()] - cursor_x);
+                        text_copy_func(cursor_x, now_line(),
+                                       cursor_x + (num - 1), now_line(), BLOCK);
+                        cursor_x = min(cursor_x, text_size[now_line()] - 1);
+                        wmove(text_screen, cursor_y, cursor_x);
+                        wrefresh(text_screen);
+                    }
                 }
 
                 nor_com = "";
@@ -1133,6 +1142,7 @@ bool normal_command_check(void) {
             } else if (tmp == "y") {
                 break;
             } else if (tmp == "yy") {
+            } else if (tmp == "yl") {
             } else {
                 flag = false;
             }
