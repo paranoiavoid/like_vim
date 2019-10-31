@@ -1,4 +1,5 @@
 /*
+:[数字]y,:[数字]dのコマンドが認識のみする状態(動作はしない)
 カーソルを[数字]G,:[数字]でline_maxより大きい行番号で動かすとcursor_x=0の位置にカーソルが来ない
 lを長押しするとバグる
 インサートモードでカーソルが画面の一番下まできたときにバグる(今のところ解消)
@@ -64,11 +65,11 @@ COPY_MODE cpmode = NO; //今のコピーされたテキストのモード
 
 //ノーマルモードのコマンドをリスト化
 vector<string> nor_com_list = {
-    "i", "a",  "I",  "A",  "h",  "j",  "k",  "l",  ":", /* "u", "d",*/ "x",
-    "X", "O",  "o",  "dd", "d$", "D",  "d0", "dl", "$", "0",
-    "^", "gg", "G",  "zt", "zz", "zb", "H",  "M",  "L", "p",
-    "P", "yy", "y$", "Y",  "y0", "yl", "C",  "cc", "r", "ZZ",
-    "ZQ"};
+    "i",  "a",  "I",  "A",  "h",  "j",  "k",  "l",  ":", /* "u", "d",*/ "x",
+    "X",  "O",  "o",  "dd", "d$", "D",  "d0", "dl", "$", "0",
+    "^",  "gg", "G",  "zt", "zz", "zb", "H",  "M",  "L", "p",
+    "P",  "yy", "y$", "Y",  "y0", "yl", "C",  "cc", "S", "r",
+    "ZZ", "ZQ"};
 
 int input_char(void); //入力された(特殊)文字のキーコードを返す
 void normal_mode(int c);
@@ -600,6 +601,22 @@ void normal_mode(int c) {
         wrefresh(text_screen);
         mode = INS;
         nor_com = "";
+    } else if (nor_com == "S") {
+        text_save();
+        text_copy_func(0, now_line(), text_size[now_line()] - 1, now_line(),
+                       LINE);
+
+        cursor_x = 0;
+        wmove(text_screen, cursor_y, cursor_x);
+        for (int i = 1; i <= text_size[now_line()]; i++) {
+            wdelch(text_screen);
+        }
+        text_size[now_line()] = 0;
+        cursor_x = 0;
+        wmove(text_screen, cursor_y, cursor_x);
+        wrefresh(text_screen);
+        mode = INS;
+        nor_com = "";
     } else if (nor_com == "r") {
         mode = REP;
     } else if (nor_com == "ZZ") {
@@ -1004,10 +1021,25 @@ void command_check(string str) {
             wmove(text_screen, cursor_y, cursor_x);
             wrefresh(text_screen);
         }
-    } catch (const std::invalid_argument &e) {
+    } catch (...) {
+        try {
+            int num = stoi(str.substr(0, str.size() - 2));
+            string com = str.substr(str.size() - 1);
+
+            if (com == "d") {
+            } else if (com == "y") {
+            }
+        } catch (...) {
+        }
+    }
+
+    /*
+    catch (const std::invalid_argument &e) {
 
     } catch (const std::out_of_range &e) {
     }
+    */
+
     if (str == "q") {
         endwin();
         exit(0);
