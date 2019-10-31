@@ -70,7 +70,7 @@ vector<string> nor_com_list = {
     "X", "O",  "o",  "dd", "d$", "D",  "d0", "dl", "$", "0",
     "^", "gg", "G",  "zt", "zz", "zb", "H",  "M",  "L", "p",
     "P", "yy", "y$", "Y",  "y0", "yl", "C",  "cc", "S", "r",
-    "f", "F",  "ZZ", "ZQ"};
+    "f", "F",  "t",  "T",  "ZZ", "ZQ"};
 
 int input_char(void); //入力された(特殊)文字のキーコードを返す
 void normal_mode(int c);
@@ -624,6 +624,10 @@ void normal_mode(int c) {
     } else if (nor_com == "f") {
         mode = SER;
     } else if (nor_com == "F") {
+        mode = SER;
+    } else if (nor_com == "t") {
+        mode = SER;
+    } else if (nor_com == "T") {
         mode = SER;
     } else if (nor_com == "ZZ") {
         endwin();
@@ -1370,7 +1374,6 @@ void search_mode(int c) {
             wrefresh(text_screen);
         }
     } else if (nor_com == "F") {
-
         if (c == KEY_ESC) {
         } else if (c == KEY_DEL) {
         } else if (c == KEY_BACKSPACE) {
@@ -1379,6 +1382,36 @@ void search_mode(int c) {
             for (int i = cursor_x - 1; i >= 0; i--) {
                 if (text[now_line()][i] == c) {
                     cursor_x = i;
+                    break;
+                }
+            }
+            wmove(text_screen, cursor_y, cursor_x);
+            wrefresh(text_screen);
+        }
+    } else if (nor_com == "t") {
+        if (c == KEY_ESC) {
+        } else if (c == KEY_DEL) {
+        } else if (c == KEY_BACKSPACE) {
+        } else if (c == KEY_ENT) {
+        } else {
+            for (int i = cursor_x + 1; i <= text_size[now_line()] - 1; i++) {
+                if (text[now_line()][i] == c) {
+                    cursor_x = i - 1;
+                    break;
+                }
+            }
+            wmove(text_screen, cursor_y, cursor_x);
+            wrefresh(text_screen);
+        }
+    } else if (nor_com == "T") {
+        if (c == KEY_ESC) {
+        } else if (c == KEY_DEL) {
+        } else if (c == KEY_BACKSPACE) {
+        } else if (c == KEY_ENT) {
+        } else {
+            for (int i = cursor_x - 1; i >= 0; i--) {
+                if (text[now_line()][i] == c) {
+                    cursor_x = i + 1;
                     break;
                 }
             }
