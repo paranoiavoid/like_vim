@@ -33,6 +33,7 @@ enum MODE { //現在のモードの状態
     VIS,    //ビジュアルモード
     COM,    //コマンドラインモード
     REP,    //置換モード
+    SER,    //検索モード
 };
 
 enum COPY_MODE { //コピーの種類分け
@@ -65,11 +66,11 @@ COPY_MODE cpmode = NO; //今のコピーされたテキストのモード
 
 //ノーマルモードのコマンドをリスト化
 vector<string> nor_com_list = {
-    "i",  "a",  "I",  "A",  "h",  "j",  "k",  "l",  ":", /* "u", "d",*/ "x",
-    "X",  "O",  "o",  "dd", "d$", "D",  "d0", "dl", "$", "0",
-    "^",  "gg", "G",  "zt", "zz", "zb", "H",  "M",  "L", "p",
-    "P",  "yy", "y$", "Y",  "y0", "yl", "C",  "cc", "S", "r",
-    "ZZ", "ZQ"};
+    "i", "a",  "I",  "A",  "h",  "j",  "k",  "l",  ":", /* "u", "d",*/ "x",
+    "X", "O",  "o",  "dd", "d$", "D",  "d0", "dl", "$", "0",
+    "^", "gg", "G",  "zt", "zz", "zb", "H",  "M",  "L", "p",
+    "P", "yy", "y$", "Y",  "y0", "yl", "C",  "cc", "S", "r",
+    "f", "F",  "ZZ", "ZQ"};
 
 int input_char(void); //入力された(特殊)文字のキーコードを返す
 void normal_mode(int c);
@@ -96,6 +97,7 @@ void text_paste_func(
     COPY_MODE mode); //テキストをペーストする関数
                      // xはカーソルの位置,yは絶対的な行番号で指定
 void replace_mode(int c);
+void search_mode(int c);
 
 WINDOW *line_screen;
 WINDOW *status_screen;
@@ -619,6 +621,10 @@ void normal_mode(int c) {
         nor_com = "";
     } else if (nor_com == "r") {
         mode = REP;
+    } else if (nor_com == "f") {
+        mode = SER;
+    } else if (nor_com == "F") {
+        mode = SER;
     } else if (nor_com == "ZZ") {
         endwin();
         exit(0);
@@ -961,6 +967,8 @@ void input_check(int c) {
         command_mode(c);
     } else if (mode == REP) {
         replace_mode(c);
+    } else if (mode == SER) {
+        search_mode(c);
     }
     mode_output();
     line_output();
@@ -1096,6 +1104,12 @@ void mode_output(void) {
             wmove(status_screen, 0, 0);
             wrefresh(status_screen);
         }
+    } else if (mode == SER) {
+        werase(status_screen);
+        wmove(status_screen, 1, window_size_x - 15);
+        waddstr(status_screen, nor_com.c_str());
+        wmove(status_screen, 0, 0);
+        wrefresh(status_screen);
     }
     getyx(text_screen, cursor_y, cursor_x);
     wmove(text_screen, cursor_y, cursor_x);
@@ -1336,4 +1350,43 @@ void replace_mode(int c) {
         wmove(text_screen, cursor_y, min(cursor_x, text_size[now_line()] - 1));
         wrefresh(text_screen);
     }
+}
+
+void search_mode(int c) {
+    if (nor_com == "f") {
+
+        if (c == KEY_ESC) {
+        } else if (c == KEY_DEL) {
+        } else if (c == KEY_BACKSPACE) {
+        } else if (c == KEY_ENT) {
+        } else {
+            for (int i = cursor_x + 1; i <= text_size[now_line()] - 1; i++) {
+                if (text[now_line()][i] == c) {
+                    cursor_x = i;
+                    break;
+                }
+            }
+            wmove(text_screen, cursor_y, cursor_x);
+            wrefresh(text_screen);
+        }
+    } else if (nor_com == "F") {
+
+        if (c == KEY_ESC) {
+        } else if (c == KEY_DEL) {
+        } else if (c == KEY_BACKSPACE) {
+        } else if (c == KEY_ENT) {
+        } else {
+            for (int i = cursor_x - 1; i >= 0; i--) {
+                if (text[now_line()][i] == c) {
+                    cursor_x = i;
+                    break;
+                }
+            }
+            wmove(text_screen, cursor_y, cursor_x);
+            wrefresh(text_screen);
+        }
+    }
+    nor_com = "";
+    mode = NOR;
+    wrefresh(text_screen);
 }
