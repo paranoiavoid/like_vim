@@ -70,7 +70,7 @@ vector<string> nor_com_list = {
     "X", "O",  "o",  "dd", "d$", "D",  "d0", "dl", "$", "0",
     "^", "gg", "G",  "zt", "zz", "zb", "H",  "M",  "L", "p",
     "P", "yy", "y$", "Y",  "y0", "yl", "C",  "cc", "S", "r",
-    "f", "F",  "t",  "T",  "ZZ", "ZQ"};
+    "f", "F",  "t",  "T",  "~",  "ZZ", "ZQ"};
 
 int input_char(void); //入力された(特殊)文字のキーコードを返す
 void normal_mode(int c);
@@ -629,6 +629,23 @@ void normal_mode(int c) {
         mode = SER;
     } else if (nor_com == "T") {
         mode = SER;
+    } else if (nor_com == "~") {
+        text_save();
+        if ('a' <= text[now_line()][cursor_x] &&
+            text[now_line()][cursor_x] <= 'z') {
+            text[now_line()][cursor_x] -= 'a';
+            text[now_line()][cursor_x] += 'A';
+        } else if ('A' <= text[now_line()][cursor_x] &&
+                   text[now_line()][cursor_x] <= 'Z') {
+
+            text[now_line()][cursor_x] -= 'A';
+            text[now_line()][cursor_x] += 'a';
+        }
+        cursor_x = min(cursor_x + 1, text_size[now_line()] - 1);
+        wmove(text_screen, cursor_y, cursor_x);
+        text_output();
+        wrefresh(text_screen);
+        nor_com = "";
     } else if (nor_com == "ZZ") {
         endwin();
         exit(0);
