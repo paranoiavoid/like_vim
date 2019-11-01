@@ -1,4 +1,5 @@
 /*
+:qでファイルが保存されず終了する
 :[数字]y,:[数字]dのコマンドが認識のみする状態(動作はしない)
 カーソルを[数字]G,:[数字]でline_maxより大きい行番号で動かすとcursor_x=0の位置にカーソルが来ない
 lを長押しするとバグる
@@ -13,6 +14,7 @@ DelとBackspaceのキーコードが異なる(エラーの原因になる可能�
 #include <algorithm>
 #include <cstring>
 #include <curses.h>
+#include <fstream>
 #include <stdexcept>
 #include <string>
 #include <unistd.h>
@@ -22,8 +24,11 @@ DelとBackspaceのキーコードが異なる(エラーの原因になる可能�
 #define KEY_ENT 10 // テンキーでないEnterにキーコードがないため定義する
 #define MAX_LINE 100000 //テキストの最大行数
 
+using std::endl;
+using std::ifstream;
 using std::max;
 using std::min;
+using std::ofstream;
 using std::string;
 using std::vector;
 
@@ -61,8 +66,9 @@ vector<int> text_size(MAX_LINE, 0); //各行のテキストの文字数を管理
 string nor_com; //ノーマルモードのコマンドを格納
 vector<string> text_copy(MAX_LINE,
                          ""); //コピーされた文字列を保存す二次元文字配列
-int copy_line = 0;     //テキストがコピーされている行数
-COPY_MODE cpmode = NO; //今のコピーされたテキストのモード
+int copy_line = 0;       //テキストがコピーされている行数
+COPY_MODE cpmode = NO;   //今のコピーされたテキストのモード
+bool file_exist = false; //ファイル名を指定して起動したかどうか
 
 //ノーマルモードのコマンドをリスト化
 vector<string> nor_com_list = {
@@ -98,13 +104,29 @@ void text_paste_func(
                      // xはカーソルの位置,yは絶対的な行番号で指定
 void replace_mode(int c);
 void search_mode(int c);
+void file_save(void);  //テキストをファイルとして保存
+void file_input(void); //テキストをファイルから読み込む
 
 WINDOW *line_screen;
 WINDOW *status_screen;
 WINDOW *text_screen;
 WINDOW *mode_screen;
 
-int main(void) {
+ofstream ofs;
+string file_name;
+ifstream ifs;
+
+int main(int argc, char *argv[]) {
+    if (argc == 1) {
+        file_exist = false;
+    } else if (argc == 2) {
+        file_exist = true;
+        file_name = argv[1];
+        file_input();
+    } else {
+        exit(0);
+    }
+
     initscr(); //初期化する
 
     getmaxyx(stdscr, window_size_y,
@@ -133,6 +155,7 @@ int main(void) {
 
     move(0, line_window_width);
     mode_output();
+    text_output();
 
     while (1) {
         input_check(input_char());
@@ -1073,11 +1096,14 @@ void command_check(string str) {
         endwin();
         exit(0);
     } else if (str == "wq") {
+        file_save();
         endwin();
         exit(0);
     } else if (str == "q!") {
         endwin();
         exit(0);
+    } else if (str == "w") {
+        file_save();
     }
 }
 
@@ -1438,5 +1464,37 @@ void search_mode(int c) {
     }
     nor_com = "";
     mode = NOR;
+    wrefresh(text_screen);
+}
+
+void file_save(void) {
+
+    ofs.open(file_name);
+    for (int i = 1; i <= line_max; i++) {
+        for (int x = 0; x < text_size[i]; x++) {
+            ofs << text[i][x];
+        }
+        ofs << endl;
+    }
+}
+
+void file_input(void) {
+    ifs.open(file_name);
+    if (ifs.fail()) {
+        exit(0);
+    }
+    string str;
+    int i = 1;
+    while (getline(ifs, str)) {
+        text[i] = str;
+        text_size[i] = str.size();
+        i++;
+    }
+    i--;
+    i = max(1, i);
+    line_max = i;
+
+    line_output();
+    text_output();
     wrefresh(text_screen);
 }
