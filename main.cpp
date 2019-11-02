@@ -1,4 +1,5 @@
 /*
+ファイルを閉じるときにファイル名が指定されているかどうかで分岐させる
 :qでファイルが保存されず終了する
 :[数字]y,:[数字]dのコマンドが認識のみする状態(動作はしない)
 カーソルを[数字]G,:[数字]でline_maxより大きい行番号で動かすとcursor_x=0の位置にカーソルが来ない
@@ -76,7 +77,7 @@ vector<string> nor_com_list = {
     "X", "O",  "o",  "dd", "d$", "D",  "d0", "dl", "$", "0",
     "^", "gg", "G",  "zt", "zz", "zb", "H",  "M",  "L", "p",
     "P", "yy", "y$", "Y",  "y0", "yl", "C",  "cc", "S", "r",
-    "f", "F",  "t",  "T",  "~",  "ZZ", "ZQ"};
+    "f", "F",  "t",  "T",  "~",  /* "ZZ", "ZQ"*/};
 
 int input_char(void); //入力された(特殊)文字のキーコードを返す
 void normal_mode(int c);
@@ -669,13 +670,17 @@ void normal_mode(int c) {
         text_output();
         wrefresh(text_screen);
         nor_com = "";
-    } else if (nor_com == "ZZ") {
+    }
+    /*
+        else if (nor_com == "ZZ") {
         endwin();
         exit(0);
     } else if (nor_com == "ZQ") {
         endwin();
         exit(0);
-    } else if (nor_com[0] >= '1' && nor_com[0] <= '9') {
+    }
+    */
+    else if (nor_com[0] >= '1' && nor_com[0] <= '9') {
 
         for (int i = 0; i < nor_com.size(); i++) {
             if (nor_com[i] >= '0' && nor_com[i] <= '9') {
@@ -1096,14 +1101,18 @@ void command_check(string str) {
         endwin();
         exit(0);
     } else if (str == "wq") {
-        file_save();
+        if (file_exist == true) {
+            file_save();
+        }
         endwin();
         exit(0);
     } else if (str == "q!") {
         endwin();
         exit(0);
     } else if (str == "w") {
-        file_save();
+        if (file_exist == true) {
+            file_save();
+        }
     }
 }
 
@@ -1481,7 +1490,7 @@ void file_save(void) {
 void file_input(void) {
     ifs.open(file_name);
     if (ifs.fail()) {
-        exit(0);
+        return;
     }
     string str;
     int i = 1;
